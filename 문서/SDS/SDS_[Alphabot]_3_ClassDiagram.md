@@ -52,27 +52,31 @@ classDiagram
 classDiagram
   class SearchScreen {
     -searchController: SearchController
+    -currentHistoryList: List~SearchHistoryItem~
+    +onSearchBoxClick()
+    +onDeleteItemClick(itemId: String)
     +displayHistory(historyList: List~SearchHistoryItem~)
     +displayNoHistoryMessage()
     +removeItemFromList(itemId: String)
-}
+  }
 
   class SearchController {
     -historyDatabase: HistoryDatabase
     +loadSearchHistory(userId: String): List~SearchHistoryItem~
     +deleteHistoryItem(itemId: String): boolean
-}
+  }
 
-  class HistoryDatabase { 
+  class HistoryDatabase {
     +getHistory(userId: String): List~SearchHistoryItem~
     +deleteItem(itemId: String): boolean
-}
+  }
 
   class SearchHistoryItem {
     -itemId: String
+    -userId: bigint
     -query: String
-    -timestamp: Date
-}
+    -timestamp: datetime
+  }
 
 SearchScreen "1" -- "1" SearchController : uses >
 SearchController "1" -- "1" HistoryDatabase : uses >
