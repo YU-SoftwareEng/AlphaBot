@@ -33,8 +33,8 @@ const LoginPage: React.FC = () => {
             
             console.log('로그인 성공! 받은 토큰:', data.access_token);
             
-            localStorage.setItem('authToken', data.access_token);
             localStorage.setItem('access_token', data.access_token);
+            localStorage.setItem('refresh_token', data.refresh_token); 
             
             navigate('/chat');
 

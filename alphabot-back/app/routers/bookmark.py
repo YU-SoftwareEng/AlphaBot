@@ -18,7 +18,7 @@ router = APIRouter()
 # --- API 엔드포인트 정의 ---
 
 @router.post(
-    "/", 
+    "", 
     response_model=BookmarkRead, 
     status_code=status.HTTP_201_CREATED
 )
@@ -40,7 +40,7 @@ def create_bookmark(
     return bookmark
 
 
-@router.get("/", response_model=BookmarkList)
+@router.get("", response_model=BookmarkList)
 def read_bookmarks(
     *,
     db: Session = Depends(get_db),

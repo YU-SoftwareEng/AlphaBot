@@ -15,6 +15,8 @@ export default function RightMenu({ onSelectStock }: RightMenuProps) {
 
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       alert('로그아웃되었습니다.');
       navigate('/login');
     }

@@ -31,3 +31,15 @@ def create_access_token(data: dict) -> str:
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
+def create_refresh_token(data: dict) -> str:
+    """jwt 리프레시 토큰을 생성 (유효기간 7일)"""
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+    return encoded_jwt

@@ -41,7 +41,9 @@ class Settings(BaseSettings):
     # jwt설정
     SECRET_KEY: str = "secret_key" #나중에 키 수정
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1
+    
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7 
 
     def model_post_init(self, __context: Any) -> None:  # type: ignore[override]
         if self.database_url:
