@@ -12,7 +12,7 @@ const SignupPage: React.FC = () => {
     password: '',
     passwordConfirm: ''
   });
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -36,8 +36,8 @@ const SignupPage: React.FC = () => {
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
-    
+    const newErrors: { [key: string]: string } = {};
+
     if (!formData.loginId.trim()) {
       newErrors.loginId = '아이디는 필수 입력 항목입니다.';
     }
@@ -60,9 +60,9 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    
+
     const newErrors = validateForm();
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -82,12 +82,12 @@ const SignupPage: React.FC = () => {
       let message = '회원가입 중 오류가 발생했습니다.';
       if (error instanceof AxiosError) {
         const data = error.response?.data;
-        
+
         // FastAPI validation error (422)
         if (error.response?.status === 422 && data?.detail) {
           if (Array.isArray(data.detail)) {
             // Pydantic validation errors
-            const errors = data.detail.map((err: any) => 
+            const errors = data.detail.map((err: any) =>
               `${err.loc?.join(' > ') || 'Field'}: ${err.msg}`
             ).join(', ');
             message = `입력 오류: ${errors}`;
@@ -102,7 +102,7 @@ const SignupPage: React.FC = () => {
           } else if (typeof data?.detail === 'string') {
             message = data.detail;
           }
-          
+
           if (message.includes('아이디')) {
             setErrors(prev => ({
               ...prev,
@@ -166,6 +166,7 @@ const SignupPage: React.FC = () => {
               placeholder="비밀번호를 입력하세요"
               $error={!!errors.password}
             />
+            <HelperText>8자 이상 입력해주세요.</HelperText>
             {errors.password && <ErrorText>{errors.password}</ErrorText>}
           </InputGroup>
 
@@ -187,7 +188,7 @@ const SignupPage: React.FC = () => {
             {isSubmitting ? '처리 중...' : '가입하기'}
           </SubmitButton>
         </Form>
-        
+
         <Footer>
           이미 계정이 있으신가요? <Link to="/login">로그인</Link>
         </Footer>
@@ -258,6 +259,12 @@ const Input = styled.input<{ $error?: boolean }>`
 const ErrorText = styled.span`
   font-size: 12px;
   color: #e74c3c;
+  margin-top: -4px;
+`;
+
+const HelperText = styled.span`
+  font-size: 12px;
+  color: #888;
   margin-top: -4px;
 `;
 

@@ -10,7 +10,7 @@ import { getMe, updateProfile, changePassword } from '@/api/userClient';
 const MyPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
-  
+
   // --- 사용자 정보 상태 ---
   const [userInfo, setUserInfo] = useState({
     loginId: '',
@@ -28,7 +28,7 @@ const MyPage: React.FC = () => {
     newPassword: '',
     newPasswordConfirm: ''
   });
-  const [passwordErrors, setPasswordErrors] = useState<{[key: string]: string}>({});
+  const [passwordErrors, setPasswordErrors] = useState<{ [key: string]: string }>({});
 
   // 1. 페이지 로드 시 내 정보 가져오기
   useEffect(() => {
@@ -62,7 +62,7 @@ const MyPage: React.FC = () => {
       alert('이름을 입력해주세요.');
       return;
     }
-    
+
     try {
       const updatedUser = await updateProfile({ username: editedName });
       setUserInfo({ ...userInfo, username: updatedUser.username }); // 화면 업데이트
@@ -99,7 +99,7 @@ const MyPage: React.FC = () => {
   // 4. 비밀번호 변경 요청 핸들러
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: {[key: string]: string} = {};
+    const errors: { [key: string]: string } = {};
 
     // 클라이언트 측 유효성 검사
     if (!passwordData.currentPassword) {
@@ -138,10 +138,10 @@ const MyPage: React.FC = () => {
         // 백엔드에서 보낸 에러 메시지 표시 (예: 현재 비밀번호 불일치)
         const detail = error.response.data.detail;
         if (detail.includes('비밀번호')) {
-           // 상황에 따라 적절한 필드에 에러 표시, 여기선 현재 비밀번호 에러로 간주
-           setPasswordErrors({ currentPassword: detail });
+          // 상황에 따라 적절한 필드에 에러 표시, 여기선 현재 비밀번호 에러로 간주
+          setPasswordErrors({ currentPassword: detail });
         } else {
-           alert(detail);
+          alert(detail);
         }
       } else {
         alert('비밀번호 변경 중 오류가 발생했습니다.');
@@ -180,7 +180,7 @@ const MyPage: React.FC = () => {
               <ReadOnlyInput value={userInfo.loginId} readOnly />
               <HelperText>아이디는 변경할 수 없습니다.</HelperText>
             </InfoGroup>
-            
+
             <InfoGroup>
               <Label>이름</Label>
               {isEditMode ? (
@@ -237,6 +237,7 @@ const MyPage: React.FC = () => {
                   placeholder="새 비밀번호를 입력하세요"
                   error={!!passwordErrors.newPassword}
                 />
+                <HelperText>8자 이상 입력해주세요.</HelperText>
                 {passwordErrors.newPassword && (
                   <ErrorText>{passwordErrors.newPassword}</ErrorText>
                 )}
