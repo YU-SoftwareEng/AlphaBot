@@ -52,7 +52,7 @@ GCP(Google Cloud Platform) 기반을 전제로 하며, 초기 트래픽을 감�
 - **KST (Korea Standard Time)**: 한국 표준시(UTC+9). 문서의 시간 표기 기준.
 - **Rate Limit (레이트 리밋)**: 시스템·게이트웨이가 허용하는 요청 빈도 제한 정책.
 - **Cache (캐시) / Cache Miss (캐시 미스)**: 결과를 임시 저장하여 재사용 / 캐시에 결과가 없어 원본 조회가 필요한 상태.
-- **Realized / Unrealized P&L (실현/미실현 손익)**: 매매로 확정된 손익 / 보유 중 평가손익.
+
 - **WebSocket (웹소켓)**: 서버↔클라이언트 양방향 실시간 통신.
 - **CDN (Content Delivery Network)**: 정적 리소스를 지리적으로 분산 캐싱/전송하는 네트워크.
 - **LTS (Long Term Support)**: 장기 지원 버전. 안정적 유지보수와 보안 패치 제공 기간이 김.
