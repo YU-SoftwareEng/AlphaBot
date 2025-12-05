@@ -10,7 +10,6 @@ const mapBackendMessage = (message: chatApi.BackendMessage): ChatMessage => ({
   id: String(message.messages_id),
   role: message.role === 'assistant' ? 'bot' : 'user',
   text: message.content,
-  referenced_news: (message as any).referenced_news,
 })
 
 type Props = {
