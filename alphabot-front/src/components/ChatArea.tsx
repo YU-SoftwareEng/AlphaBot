@@ -123,7 +123,9 @@ export default function ChatArea({ stockCode }: Props) {
             <WelcomeIcon>💼</WelcomeIcon>
             <WelcomeTitle>Alpha Bot에 오신 것을 환영합니다</WelcomeTitle>
             <WelcomeDescription>
-              상단의 검색창에서 종목을 선택하면 해당 종목에 대한 대화를 시작할 수 있습니다.
+              왼쪽의 종목코드 창에서 검색하면 해당 종목에 대한 대화를 시작할 수 있습니다.
+              <br />
+              (현재 S&P 500 종목만 지원합니다)
             </WelcomeDescription>
           </WelcomeMessage>
         )}
