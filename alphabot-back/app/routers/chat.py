@@ -54,14 +54,19 @@ def create_message_with_openai(
     current_user: User = Depends(get_current_user),
 ):
     """사용자 메시지를 저장하고 OpenAI 응답을 생성하여 함께 반환"""
-    user_message, assistant_message = create_message_and_reply(
+    user_message, assistant_message, news_docs = create_message_and_reply(
         db,
         room_id=room_id,
         current_user=current_user,
         message=MessageCreate(content=request.content),
         system_prompt=request.system_prompt,
     )
-    return ChatCompletionResponse(user_message=user_message, assistant_message=assistant_message)
+    
+    # DB 모델을 Pydantic 모델로 변환 후 referenced_news 주입
+    assistant_msg_read = MessageRead.model_validate(assistant_message)
+    assistant_msg_read.referenced_news = news_docs
+    
+    return ChatCompletionResponse(user_message=user_message, assistant_message=assistant_msg_read)
 
 
 @router.get("/rooms/{room_id}/messages", response_model=List[MessageRead])

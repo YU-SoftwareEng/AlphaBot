@@ -33,6 +33,19 @@ export default function MessageItem({ message }: Props) {
               <FaRegStar />
             </BookmarkButton>
           )}
+          {message.referenced_news && message.referenced_news.length > 0 && (
+            <NewsContainer>
+              <NewsHeader>참고 뉴스</NewsHeader>
+              <NewsList>
+                {message.referenced_news.map((news, idx) => (
+                  <NewsItem key={idx}>
+                    <NewsTitle>{news.title}</NewsTitle>
+                    <NewsDate>{new Date(news.published_at).toLocaleDateString()}</NewsDate>
+                  </NewsItem>
+                ))}
+              </NewsList>
+            </NewsContainer>
+          )}
         </MessageText>
       </MessageContent>
     </MessageWrapper>
@@ -117,4 +130,46 @@ const BookmarkButton = styled.button`
   &:hover {
     color: #f59e0b;
   }
+`;
+
+const NewsContainer = styled.div`
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+`;
+
+const NewsHeader = styled.div`
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+`;
+
+const NewsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const NewsItem = styled.div`
+  display: block;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+`;
+
+const NewsTitle = styled.div`
+  font-size: 13px;
+  font-weight: 500;
+  color: #202123;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const NewsDate = styled.div`
+  font-size: 11px;
+  color: #8e8ea0;
 `;
