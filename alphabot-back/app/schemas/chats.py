@@ -16,6 +16,7 @@ class MessageRead(BaseModel):
     user_id: int
     chat_id: int
     role: str = Field(description="메시지 주체: user 또는 assistant")
+    referenced_news: Optional[list[dict]] = None
     created_at: datetime
 
     class Config:
