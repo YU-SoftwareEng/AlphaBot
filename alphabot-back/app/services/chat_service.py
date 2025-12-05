@@ -319,10 +319,14 @@ def _build_rag_news_summary(
     *,
     latest_user_text: str | None = None,
     max_items: int = _RAG_NEWS_SUMMARY_LIMIT,
-) -> Optional[str]:
-    """RAG 기반으로 종목 관련 최신 뉴스 요약을 생성합니다."""
+) -> Tuple[Optional[str], List[dict]]:
+    """RAG 기반으로 종목 관련 최신 뉴스 요약을 생성합니다.
+    
+    Returns:
+        (summary_text, news_docs_list)
+    """
     if not _ENABLE_RAG_NEWS or not stock_code or get_news_session is None:
-        return None
+        return None, []
 
     try:
         with closing(get_news_session()) as news_db:
@@ -343,10 +347,10 @@ def _build_rag_news_summary(
                     break
     except Exception as exc:  # pragma: no cover - 외부 의존성 실패 시 무시
         print(f"[chat_service] 뉴스 요약 RAG 실패: {exc}", flush=True)
-        return None
+        return None, []
 
     if not docs:
-        return None
+        return None, []
 
     summary_lines: List[str] = []
     for idx, doc in enumerate(docs[:max_items], start=1):
@@ -361,7 +365,8 @@ def _build_rag_news_summary(
     return (
         f"[뉴스 요약]\n"
         f"{stock_code} 관련 최신 기사에서 추출한 핵심 내용입니다. 필요한 경우 아래 정보를 참고해 답변하세요.\n"
-        + "\n".join(summary_lines)
+        + "\n".join(summary_lines),
+        docs[:max_items]
     )
 
 
@@ -482,13 +487,13 @@ def generate_and_save_assistant_reply(
     room_id: int,
     current_user: User,
     system_prompt: str | None = None,
-) -> Message:
+) -> Tuple[Message, List[dict]]:
     """최근 대화 이력을 바탕으로 OpenAI를 호출해 어시스턴트 응답을 생성하고 저장합니다."""
     chat = _ensure_room_ownership(db, room_id, current_user.user_id)
 
     history = _load_chat_history(db, room_id=room_id)  # 대화 이력 로드
     latest_user_text = _extract_latest_user_text(history)
-    rag_summary = _build_rag_news_summary(chat.stock_code, latest_user_text=latest_user_text)
+    rag_summary, news_docs = _build_rag_news_summary(chat.stock_code, latest_user_text=latest_user_text)
 
     oai_messages = _convert_history_to_openai_messages(history, system_prompt=system_prompt)  # OpenAI 포맷 변환
     if rag_summary:
@@ -507,7 +512,7 @@ def generate_and_save_assistant_reply(
     chat.lastchat_at = func.now()
     db.commit()
     db.refresh(assistant_message)
-    return assistant_message
+    return assistant_message, news_docs
 
 
 def create_message_and_reply(
@@ -517,14 +522,14 @@ def create_message_and_reply(
     current_user: User,
     message: MessageCreate,
     system_prompt: str | None = None,
-) -> Tuple[Message, Message]:
+) -> Tuple[Message, Message, List[dict]]:
     """사용자 메시지를 저장한 뒤 OpenAI를 호출해 응답을 생성/저장하고,
-    (user_message, assistant_message) 튜플로 반환합니다."""
+    (user_message, assistant_message, news_docs) 튜플로 반환합니다."""
     user_msg = save_user_message(db, room_id=room_id, current_user=current_user, message=message)
-    assistant_msg = generate_and_save_assistant_reply(
+    assistant_msg, news_docs = generate_and_save_assistant_reply(
         db, room_id=room_id, current_user=current_user, system_prompt=system_prompt
     )
-    return user_msg, assistant_msg
+    return user_msg, assistant_msg, news_docs
 
 
 def fetch_chat_messages(

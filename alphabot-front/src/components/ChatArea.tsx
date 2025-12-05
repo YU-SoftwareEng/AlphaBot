@@ -10,6 +10,7 @@ const mapBackendMessage = (message: chatApi.BackendMessage): ChatMessage => ({
   id: String(message.messages_id),
   role: message.role === 'assistant' ? 'bot' : 'user',
   text: message.content,
+  referenced_news: (message as any).referenced_news,
 })
 
 type Props = {
@@ -94,33 +95,33 @@ export default function ChatArea({ stockCode }: Props) {
       { id: tempUserId, role: 'user', text: trimmed },
       { id: tempAssistantId, role: 'bot', text: '답변을 생성 중입니다...' },
     ])
-    ;(async () => {
-      try {
-        const response = await chatApi.createChatCompletion(roomId, { content: trimmed })
-        setMessages((prev) =>
-          prev.map((msg) => {
-            if (msg.id === tempUserId) {
-              return mapBackendMessage(response.user_message)
-            }
-            if (msg.id === tempAssistantId) {
-              return mapBackendMessage(response.assistant_message)
-            }
-            return msg
-          }),
-        )
-      } catch (e: any) {
-        console.error(e)
-        setMessages((prev) => prev.filter((msg) => msg.id !== tempUserId && msg.id !== tempAssistantId))
-        if (e?.status === 401) {
-          setError('로그인이 만료되었습니다. 다시 로그인해주세요.')
-          navigate('/login', { replace: true })
-        } else {
-          setError('메시지를 전송하지 못했습니다. 다시 시도해 주세요.')
+      ; (async () => {
+        try {
+          const response = await chatApi.createChatCompletion(roomId, { content: trimmed })
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id === tempUserId) {
+                return mapBackendMessage(response.user_message)
+              }
+              if (msg.id === tempAssistantId) {
+                return mapBackendMessage(response.assistant_message)
+              }
+              return msg
+            }),
+          )
+        } catch (e: any) {
+          console.error(e)
+          setMessages((prev) => prev.filter((msg) => msg.id !== tempUserId && msg.id !== tempAssistantId))
+          if (e?.status === 401) {
+            setError('로그인이 만료되었습니다. 다시 로그인해주세요.')
+            navigate('/login', { replace: true })
+          } else {
+            setError('메시지를 전송하지 못했습니다. 다시 시도해 주세요.')
+          }
+        } finally {
+          setIsSending(false)
         }
-      } finally {
-        setIsSending(false)
-      }
-    })()
+      })()
   }
 
   return (
