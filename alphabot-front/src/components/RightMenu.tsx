@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Button from './Button/Button';
@@ -10,7 +9,7 @@ interface RightMenuProps {
   selectedStockName?: string | null;
 }
 
-export default function RightMenu({ onSelectStock, selectedStockCode }: RightMenuProps) {
+export default function RightMenu({ selectedStockCode }: RightMenuProps) {
   const navigate = useNavigate();
   const handleLogout = () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
