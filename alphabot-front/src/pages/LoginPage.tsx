@@ -15,12 +15,12 @@ const LoginPage: React.FC = () => {
 
         try {
             const data = await loginRequest({ login_id, password });
-        
+
             console.log('로그인 성공! 받은 토큰:', data.access_token);
-            
+
             localStorage.setItem('authToken', data.access_token);
             localStorage.setItem('access_token', data.access_token);
-            
+
             navigate('/chat');
 
         } catch (err) {
@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
         borderRadius: '8px',
         width: '350px',
     };
-    
+
     const inputGroupStyle: React.CSSProperties = {
         display: 'flex',
         flexDirection: 'column',
@@ -82,7 +82,7 @@ const LoginPage: React.FC = () => {
         color: '#ff4d4d',
         textAlign: 'center',
     };
-    
+
     // --- JSX 렌더링 부분 ---
     return (
         <div style={pageStyle}>
@@ -110,6 +110,18 @@ const LoginPage: React.FC = () => {
                 </div>
                 {error && <p style={errorStyle}>{error}</p>}
                 <button type="submit" style={buttonStyle}>로그인</button>
+                <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    style={{
+                        ...buttonStyle,
+                        backgroundColor: 'transparent',
+                        border: '1px solid #555',
+                        marginTop: '10px'
+                    }}
+                >
+                    메인으로 돌아가기
+                </button>
             </form>
         </div>
     );
