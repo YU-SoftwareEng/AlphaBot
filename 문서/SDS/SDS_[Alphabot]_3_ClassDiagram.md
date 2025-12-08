@@ -680,286 +680,225 @@ classDiagram
 ## 4. 채팅 메시지와 저장과 채팅방 삭제를 위한 class diagram
 ```mermaid
 classDiagram
+    %% --- Frontend Components ---
+    class ChatApiClient {
+      <<Interface>>
+      +upsertRoomByStock(stockCode, title?): Promise~ChatUpsertResponse~
+      +updateChat(chatId, payload): Promise~BackendChat~
+      +getMessages(roomId, lastMessageId?): Promise~BackendMessage[]~
+      +createChatCompletion(roomId, params): Promise~ChatCompletionResponse~
+      +listChats(): Promise~BackendChat[]~
+    }
+
+    class BookmarkApiClient {
+      <<Interface>>
+      +listSavedMessages(categoryId): Promise~SavedMessage[]~
+      +createBookmark(messageId, categoryId?): Promise~SavedMessage~
+      +updateBookmark(bookmarkId, categoryId): Promise~SavedMessage~
+      +deleteSavedMessage(id): Promise~void~
+    }
+
     class ChatPage {
       +render(): JSX.Element
     }
 
     class ChatArea {
-      -messages: ChatMessage[]
+      -messages: BackendMessage[]
       -input: string
-      -api: ChatApiClient
       +render(): JSX.Element
       +handleBookmark(messageId)
       +handleDelete(chatRoomId)
     }
 
-    class ChatInput {
-      +value: string
-      +onChange(value)
-      +onSubmit()
-    }
+    ChatPage --> ChatArea
+    ChatArea ..> ChatApiClient
+    ChatArea ..> BookmarkApiClient
 
-    class MessageItem {
-      +message: ChatMessage
-      +onBookmark(messageId)
-      +render(): JSX.Element
-    }
-
-    class ChatMessage {
-      +id: string
-      +role: "bot"|"user"
-      +text: string
-    }
-
-    class ChatApiClient {
-      -baseUrl: string
-      -http: HttpClient
-      +checkBookmark(messageId): Promise<ApiResult<bool>>
-      +saveBookmark(messageId, categoryId?, newCategoryName?): Promise<ApiResult<void>>
-      +deleteRoom(chatRoomId): Promise<ApiResult<void>>
-      +fetchCategories(): Promise<ApiResult<CategorySummary[]>>
+    %% --- Backend Components ---
+    
+    class ChatRouter {
+      <<FastAPI Router>>
+      +create_message_with_openai(room_id, request, db, user)
+      +get_messages(room_id, last_message_id, db, user)
+      +get_chat_rooms(db, user)
+      +enter_chat_by_stock(stock_code, title, db, user)
+      +update_chat_room(room_id, chat_in, db, user)
     }
 
     class BookmarkRouter {
-      -service: BookmarkService
-      +checkBookmark(messageId, currentUser): Response<bool>
-      +saveBookmark(dto, currentUser): Response<void>
-    }
-
-    class ChatRouter {
-      -service: ChatService
-      +createMessage(roomId, messageDto, currentUser): Response<Message>
-      +getMessages(roomId, lastMessageId?, currentUser): Response<Message[]>
-      +getRooms(currentUser): Response<Chat[]>
-      +deleteRoom(chatRoomId, currentUser): Response<void>
-    }
-
-    class BookmarkService {
-      -bookmarkRepo: BookmarkRepository
-      -categoryRepo: CategoryRepository
-      -messageRepo: MessageRepository
-      +isBookmarked(messageId, userId): bool
-      +saveBookmark(messageId, userId, categoryParam): void
+      <<FastAPI Router>>
+      +create_bookmark(bookmark_in, db, user)
+      +read_bookmarks(page, page_size, category_id, db, user)
+      +update_bookmark_category(bookmark_id, bookmark_in, db, user)
+      +delete_bookmark(bookmark_id, db, user)
     }
 
     class ChatService {
-      -chatRepo: ChatRepository
-      -messageRepo: MessageRepository
-      +appendMessage(roomId, userId, content): Message
-      +loadMessages(roomId, lastMessageId?): Message[]
-      +moveToTrash(chatRoomId, userId): void
+      <<Module>>
+      +save_user_message(db, room_id, user, message)
+      +create_message_and_reply(db, room_id, user, message, system_prompt)
+      +fetch_chat_messages(db, room_id, user, last_message_id)
+      +list_user_chat_rooms(db, user)
+      +upsert_chat_by_stock(db, user, stock_code, title)
+      +update_chat_room_for_user(db, room_id, user, chat_in)
+      -generate_and_save_assistant_reply(db, room_id, user)
     }
 
-    class BookmarkRepository {
-      -db: Session
-      +exists(messageId, userId): bool
-      +save(bookmark): void
+    class CRUDBookmark {
+      <<CRUD Class>>
+      +create_with_user(db, obj_in, user_id)
+      +get_by_id_and_user(db, bookmark_id, user_id)
+      +get_multi_by_user(db, user_id, skip, limit)
+      +get_multi_by_user_and_category(db, user_id, category_id, skip, limit)
+      +remove_by_id_and_user(db, bookmark_id, user_id)
+      +update(db, db_obj, obj_in)
     }
 
-    class CategoryRepository {
-      -db: Session
-      +findById(categoryId, userId): Category?
-      +findByName(name, userId): Category?
-      +listAll(userId): Category[]
-      +save(category): Category
-    }
+    %% --- Relationships ---
+    ChatApiClient ..> ChatRouter : "HTTP Request"
+    BookmarkApiClient ..> BookmarkRouter : "HTTP Request"
 
-    class ChatRepository {
-      -db: Session
-      +findOwned(chatRoomId, userId): Chat?
-      +save(chat): Chat
-    }
-
-    class MessageRepository {
-      -db: Session
-      +findById(messageId, userId): Message?
-      +list(roomId, lastMessageId?): Message[]
-      +save(message): Message
-    }
-
-    ChatPage --> ChatArea
-    ChatArea --> ChatInput
-    ChatArea --> MessageItem
-    MessageItem --> ChatMessage
-    ChatArea ..> ChatApiClient
-
-    ChatApiClient ..> BookmarkRouter : "HTTP /bookmarks"
-    ChatApiClient ..> ChatRouter : "HTTP /rooms"
-
-    BookmarkRouter --> BookmarkService
-    ChatRouter --> ChatService
-
-    BookmarkService --> BookmarkRepository
-    BookmarkService --> CategoryRepository
-    BookmarkService --> MessageRepository
-
-    ChatService --> ChatRepository
-    ChatService --> MessageRepository
+    ChatRouter ..> ChatService : "calls"
+    BookmarkRouter ..> CRUDBookmark : "calls"
 ```
 ---
 
-### 4.1 ChatApiClient
-**Class Description**  
-: 북마크·채팅 관련 HTTP 호출을 캡슐화합니다.
-
-### Attributes
-- **baseUrl** *(string, private)*  
-  : 백엔드 API 기본 경로.
-- **http** *(HttpClient, private)*  
-  : 실제 네트워크 요청을 수행하는 클라이언트.
-
-### Operations
-- **checkBookmark** *(messageId → Promise<ApiResult<bool>>, public)*  
-  : 메시지 북마크 여부 조회.
-- **saveBookmark** *(messageId, categoryId?, newCategoryName? → Promise<ApiResult<void>>, public)*  
-  : 북마크 저장 요청.
-- **deleteRoom** *(chatRoomId → Promise<ApiResult<void>>, public)*  
-  : 채팅방 휴지통 이동 요청.
-- **fetchCategories** *(→ Promise<ApiResult<CategorySummary[]>>, public)*  
-  : 카테고리 목록 조회.
+### 4.1 ChatApiClient (Interface)
+**Class Description**
+: 채팅 관련 API를 호출하는 인터페이스입니다.
+**Operations**
+- **upsertRoomByStock** *(stockCode, title? → Promise<ChatUpsertResponse>, public)*
+  : 종목 코드로 채팅방을 생성하거나, 기존 방이 있다면 정보를 반환합니다.
+- **updateChat** *(chatId, payload → Promise<BackendChat>, public)*
+  : 채팅방의 정보(제목 수정, 휴지통 이동 등)를 업데이트합니다.
+- **getMessages** *(roomId, lastMessageId? → Promise<BackendMessage[]>, public)*
+  : 특정 채팅방의 메시지 내역을 조회합니다.
+- **createChatCompletion** *(roomId, params → Promise<ChatCompletionResponse>, public)*
+  : 사용자 메시지를 전송하고 AI의 응답을 요청합니다.
+- **listChats** *(→ Promise<BackendChat[]>, public)*
+  : 사용자가 참여 중인 모든 채팅방 목록을 조회합니다.
 
 ---
 
-### 4.2 BookmarkRouter
-**Class Description**  
-: FastAPI에서 북마크 관련 엔드포인트를 제공하는 라우터입니다.
+### 4.2 BookmarkApiClient (Interface)
+**Class Description**
+: 북마크(메시지 저장) 관련 API를 호출하는 인터페이스입니다.
 
-### Attributes
-- **service** *(BookmarkService, private)*  
-  : 북마크 로직 담당 서비스.
-
-### Operations
-- **checkBookmark** *(messageId, currentUser → Response<bool>, public)*  
-  : 메시지 북마크 여부 확인.
-- **saveBookmark** *(dto, currentUser → Response<void>, public)*  
-  : 북마크 저장 처리.
-
----
-
-### 4.3 ChatRouter
-**Class Description**  
-: 채팅 메시지·채팅방 요청을 처리하는 FastAPI 라우터입니다.
-
-### Attributes
-- **service** *(ChatService, private)*  
-  : 채팅 로직 담당 서비스.
-
-### Operations
-- **createMessage** *(roomId, messageDto, currentUser → Response<Message>, public)*  
-  : 채팅방에 메시지 추가.
-- **getMessages** *(roomId, lastMessageId?, currentUser → Response<Message[]>, public)*  
-  : 메시지 목록 조회.
-- **getRooms** *(currentUser → Response<Chat[]>, public)*  
-  : 채팅방 목록 조회.
-- **deleteRoom** *(chatRoomId, currentUser → Response<void>, public)*  
-  : 채팅방 휴지통 이동.
+**Operations**
+- **listSavedMessages** *(categoryId → Promise<SavedMessage[]>, public)*
+  : 특정 카테고리(혹은 전체)에 저장된 메시지 목록을 조회합니다.
+- **createBookmark** *(messageId, categoryId? → Promise<SavedMessage>, public)*
+  : 메시지를 북마크에 저장합니다.
+- **updateBookmark** *(bookmarkId, categoryId → Promise<SavedMessage>, public)*
+  : 저장된 북마크의 카테고리를 변경합니다.
+- **deleteSavedMessage** *(id → Promise<void>, public)*
+  : 저장된 메시지(북마크)를 삭제합니다.
 
 ---
 
-### 4.4 BookmarkService
-**Class Description**  
-: 북마크 중복 검사 및 저장 로직을 제공하는 서비스 계층입니다.
+### 4.3 ChatPage
+**Class Description**
+: 채팅 기능의 최상위 페이지 컴포넌트입니다.
 
-### Attributes
-- **bookmarkRepo** *(BookmarkRepository, private)*  
-  : 북마크 데이터 접근.
-- **categoryRepo** *(CategoryRepository, private)*  
-  : 카테고리 조회·생성.
-- **messageRepo** *(MessageRepository, private)*  
-  : 메시지 검증.
-
-### Operations
-- **isBookmarked** *(messageId, userId → bool, public)*  
-  : 북마크 존재 여부 확인.
-- **saveBookmark** *(messageId, userId, categoryParam → void, public)*  
-  : 카테고리 결정 후 북마크 저장.
+**Operations**
+- **render** *(→ JSX.Element, public)*
+  : 채팅 페이지의 전체 레이아웃을 렌더링합니다.
 
 ---
 
-### 4.5 ChatService
-**Class Description**  
-: 채팅 메시지 처리와 채팅방 상태 변경을 담당하는 서비스입니다.
+### 4.4 ChatArea
+**Class Description**
+: 실제 대화가 이루어지는 UI 영역입니다. 메시지 목록을 표시하고 입력을 처리합니다.
 
-### Attributes
-- **chatRepo** *(ChatRepository, private)*  
-  : 채팅방 데이터 접근.
-- **messageRepo** *(MessageRepository, private)*  
-  : 메시지 데이터 접근.
+**Attributes**
+- **messages** *(BackendMessage[], private)*
+  : 화면에 표시할 메시지 데이터 목록.
+- **input** *(string, private)*
+  : 사용자가 입력 중인 텍스트.
 
-### Operations
-- **appendMessage** *(roomId, userId, content → Message, public)*  
-  : 새 메시지 저장.
-- **loadMessages** *(roomId, lastMessageId? → Message[], public)*  
-  : 메시지 목록 조회.
-- **moveToTrash** *(chatRoomId, userId → void, public)*  
-  : `Chat.trash_can` 값을 휴지통으로 변경.
-
----
-
-### 4.6 BookmarkRepository
-**Class Description**  
-: SQLAlchemy 세션으로 북마크 테이블을 조작합니다.
-
-### Attributes
-- **db** *(Session, private)*  
-  : DB 트랜잭션용 세션.
-
-### Operations
-- **exists** *(messageId, userId → bool, public)*  
-  : 북마크 중복 여부 확인.
-- **save** *(bookmark → Bookmark, public)*  
-  : 새 북마크 저장.
+**Operations**
+- **render** *(→ JSX.Element, public)*
+  : 메시지 리스트와 입력창을 렌더링합니다.
+- **handleBookmark** *(messageId → void, public)*
+  : 메시지 저장 버튼 클릭 시 `BookmarkApiClient`를 호출합니다.
+- **handleDelete** *(chatRoomId → void, public)*
+  : 채팅방 삭제(나가기) 버튼 클릭 시 `ChatApiClient`를 호출합니다.
 
 ---
 
-### 4.7 CategoryRepository
-**Class Description**  
-: 카테고리 조회 및 생성을 담당합니다.
+### 4.5 ChatRouter
+**Class Description**
+: 채팅 관련 HTTP 요청을 받아 처리하는 FastAPI 라우터입니다.
 
-### Attributes
-- **db** *(Session, private)*
-
-### Operations
-- **findById** *(categoryId, userId → Category?, public)*  
-  : 특정 카테고리 조회.
-- **findByName** *(name, userId → Category?, public)*  
-  : 이름 중복 확인.
-- **listAll** *(userId → Category[], public)*  
-  : 사용자의 모든 카테고리 반환.
-- **save** *(category → Category, public)*  
-  : 카테고리 저장.
-
----
-
-### 4.8 ChatRepository
-**Class Description**  
-: 채팅방 엔티티를 조회·갱신합니다.
-
-### Attributes
-- **db** *(Session, private)*
-
-### Operations
-- **findOwned** *(chatRoomId, userId → Chat?, public)*  
-  : 소유자 검증을 겸한 채팅방 조회.
-- **save** *(chat → Chat, public)*  
-  : 채팅방 상태 갱신.
+**Operations**
+- **create_message_with_openai** *(room_id, request, db, user → ChatCompletionResponse, public)*
+  : 사용자 메시지를 저장하고, AI 응답을 생성하여 함께 반환합니다.
+- **get_messages** *(room_id, last_message_id, db, user → List[MessageRead], public)*
+  : 채팅방의 메시지 이력을 조회합니다.
+- **get_chat_rooms** *(db, user → List[ChatRead], public)*
+  : 사용자의 채팅방 목록을 반환합니다.
+- **enter_chat_by_stock** *(stock_code, title, db, user → ChatByStockResponse, public)*
+  : 종목 코드를 기반으로 채팅방을 생성하거나 조회(Upsert)합니다.
+- **update_chat_room** *(room_id, chat_in, db, user → ChatRead, public)*
+  : 채팅방 정보 수정 및 Soft Delete(휴지통 이동)를 처리합니다.
 
 ---
 
-### 4.9 MessageRepository
-**Class Description**  
-: 채팅 메시지를 조회하고 저장합니다.
+### 4.6 BookmarkRouter
+**Class Description**
+: 북마크 관련 HTTP 요청을 받아 처리하는 FastAPI 라우터입니다.
 
-### Attributes
-- **db** *(Session, private)*
+**Operations**
+- **create_bookmark** *(bookmark_in, db, user → BookmarkRead, public)*
+  : 새로운 북마크를 생성합니다.
+- **read_bookmarks** *(page, page_size, category_id, db, user → BookmarkList, public)*
+  : 북마크 목록을 페이지네이션하여 조회합니다.
+- **update_bookmark_category** *(bookmark_id, bookmark_in, db, user → BookmarkRead, public)*
+  : 북마크의 카테고리 정보를 수정합니다.
+- **delete_bookmark** *(bookmark_id, db, user → Response, public)*
+  : 북마크를 삭제합니다.
 
-### Operations
-- **findById** *(messageId, userId → Message?, public)*  
-  : 메시지 존재 및 권한 확인.
-- **list** *(roomId, lastMessageId? → Message[], public)*  
-  : 메시지 목록 조회.
-- **save** *(message → Message, public)*  
-  : 새 메시지 저장.
+---
+
+### 4.7 ChatService
+**Class Description**
+: 채팅 도메인의 비즈니스 로직을 처리하는 함수 모듈입니다.
+
+**Operations**
+- **save_user_message** *(db, room_id, user, message → Message, public)*
+  : 사용자 메시지를 DB에 저장합니다.
+- **create_message_and_reply** *(db, room_id, user, message, system_prompt → Tuple[Message, Message], public)*
+  : 메시지 저장 및 AI 응답 생성을 조율합니다.
+- **fetch_chat_messages** *(db, room_id, user, last_message_id → List[Message], public)*
+  : DB에서 메시지 목록을 조회합니다.
+- **list_user_chat_rooms** *(db, user → List[Chat], public)*
+  : 사용자가 소유한 채팅방 목록을 DB에서 조회합니다.
+- **upsert_chat_by_stock** *(db, user, stock_code, title → Tuple[Chat, bool], public)*
+  : 종목 채팅방 생성 또는 복원 로직을 수행합니다.
+- **update_chat_room_for_user** *(db, room_id, user, chat_in → Chat, public)*
+  : 채팅방 정보를 업데이트하거나 휴지통으로 이동시킵니다.
+- **generate_and_save_assistant_reply** *(db, room_id, user → Message, private)*
+  : `create_message_and_reply` 내부에서 호출되어 실제 AI 응답을 생성 및 저장합니다.
+
+---
+
+### 4.8 CRUDBookmark
+**Class Description**
+: 북마크 엔티티에 대한 DB CRUD 작업을 수행하는 클래스입니다.
+
+**Operations**
+- **create_with_user** *(db, obj_in, user_id → Bookmark, public)*
+  : 사용자 정보를 포함해 북마크를 생성합니다.
+- **get_by_id_and_user** *(db, bookmark_id, user_id → Bookmark?, public)*
+  : 사용자 본인의 북마크인지 확인하고 단일 조회합니다.
+- **get_multi_by_user** *(db, user_id, skip, limit → List[Bookmark], public)*
+  : 사용자의 전체 북마크 목록을 조회합니다.
+- **get_multi_by_user_and_category** *(db, user_id, category_id, skip, limit → List[Bookmark], public)*
+  : 특정 카테고리의 북마크 목록을 조회합니다.
+- **remove_by_id_and_user** *(db, bookmark_id, user_id → Bookmark?, public)*
+  : 북마크를 삭제합니다.
+- **update** *(db, db_obj, obj_in → Bookmark, public)*
+  : 북마크 정보를 수정합니다.
 
 ---
 # 5. 채팅을 위한 Chat Class diagram
