@@ -1,72 +1,130 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Input from '../components/common/Input';
-import Button from '../components/common/Button';
+
+import { login as loginRequest } from '@/api/authClient';
 
 const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
-  
-  // 아이디,비밀번호에 대한 state 관리 기능 구현
-  // useState를 사용해 아이디와 비밀번호 값을 저장할 state를 만듬
-  const [id, setId] = useState('');
-  const [password, setPassword] = useState('');
+    const [login_id, setLoginId] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
-  //input 값 변경될 때마다 state를 업데이트하는 함수
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setId(e.target.value);
-  };
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setError('');
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-  };
+        try {
+            const data = await loginRequest({ login_id, password });
 
-  // 폼 제출(=로그인 버튼 클릭) 시 실행 함수
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // 폼 제출시 페이지 새로고침 동작을 막음
+            console.log('로그인 성공! 받은 토큰:', data.access_token);
 
-    // id와 pw 빈 값인지 확인
-    if (!id || !password) {
-      alert('아이디와 비밀번호를 모두 입력해주세요.');
-      return;
-    }
+            localStorage.setItem('authToken', data.access_token);
+            localStorage.setItem('access_token', data.access_token);
 
-    // 로그인 처리 로직. 현재는 그냥 콘솔출력만함.
-    console.log('로그인 시도:', { id, password });
-    alert(`${id}님, 환영합니다!`);
-    
-    // 로그인 성공 후 채팅 페이지로 이동
-    navigate('/chat');
-  };
+            navigate('/chat');
 
-  return (
-    // 페이지 중앙에 위치하는 로그인 폼
-    <div className="login-container">
-      <h2>로그인</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          {/* Input 컴포넌트 사용*/}
-          <Input
-            type="text"
-            value={id}
-            onChange={handleIdChange}
-            placeholder="아이디(이메일)"
-          />
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('알 수 없는 오류가 발생했습니다.');
+            }
+        }
+    };
+
+    // --- 스타일 객체들 ---
+    const pageStyle: React.CSSProperties = {
+        display: 'flex',
+        justifyContent: 'center', // 가로 중앙 정렬
+        alignItems: 'center',     // 세로 중앙 정렬
+        height: '100vh',          // 화면 전체 높이 사용
+        backgroundColor: '#1a1a1a', // 어두운 배경색
+        color: 'white',           // 기본 글자색
+    };
+
+    const formStyle: React.CSSProperties = {
+        display: 'flex',
+        flexDirection: 'column', // 아이템들을 세로로 나열
+        gap: '20px',             // 아이템들 사이의 간격
+        padding: '40px',
+        backgroundColor: '#2a2a2a',
+        borderRadius: '8px',
+        width: '350px',
+    };
+
+    const inputGroupStyle: React.CSSProperties = {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    };
+
+    const inputStyle: React.CSSProperties = {
+        padding: '10px',
+        borderRadius: '4px',
+        border: '1px solid #555',
+        backgroundColor: '#333',
+        color: 'white',
+        fontSize: '16px',
+    };
+
+    const buttonStyle: React.CSSProperties = {
+        padding: '12px',
+        borderRadius: '4px',
+        border: 'none',
+        backgroundColor: '#5e5ce6',
+        color: 'white',
+        fontSize: '16px',
+        cursor: 'pointer',
+        marginTop: '10px',
+    };
+
+    const errorStyle: React.CSSProperties = {
+        color: '#ff4d4d',
+        textAlign: 'center',
+    };
+
+    // --- JSX 렌더링 부분 ---
+    return (
+        <div style={pageStyle}>
+            <form onSubmit={handleSubmit} style={formStyle}>
+                <h2 style={{ textAlign: 'center', margin: 0 }}>로그인</h2>
+                <div style={inputGroupStyle}>
+                    <label>아이디:</label>
+                    <input
+                        type="text"
+                        value={login_id}
+                        onChange={(e) => setLoginId(e.target.value)}
+                        required
+                        style={inputStyle}
+                    />
+                </div>
+                <div style={inputGroupStyle}>
+                    <label>비밀번호:</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        style={inputStyle}
+                    />
+                </div>
+                {error && <p style={errorStyle}>{error}</p>}
+                <button type="submit" style={buttonStyle}>로그인</button>
+                <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    style={{
+                        ...buttonStyle,
+                        backgroundColor: 'transparent',
+                        border: '1px solid #555',
+                        marginTop: '10px'
+                    }}
+                >
+                    메인으로 돌아가기
+                </button>
+            </form>
         </div>
-        <div>
-          {/* Input 컴포넌트 사용 type="password" */}
-          <Input
-            type="password"
-            value={password}
-            onChange={handlePasswordChange}
-            placeholder="비밀번호"
-          />
-        </div>
-        {/* Button 컴포넌트 사용 */}
-        <Button type="submit">로그인</Button>
-      </form>
-    </div>
-  );
+    );
 };
 
 export default LoginPage;
