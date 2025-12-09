@@ -11,8 +11,8 @@ const DEV_KNOWN_HOSTS = new Set([
 
 const DEV_FALLBACK_BASE_URL =
   typeof window !== 'undefined' &&
-  DEV_KNOWN_HOSTS.has(window.location.hostname) &&
-  window.location.port === '5173'
+    DEV_KNOWN_HOSTS.has(window.location.hostname) &&
+    window.location.port === '5173'
     ? 'http://localhost:8080'
     : ''
 
@@ -88,6 +88,9 @@ export async function apiFetch<T>(
     err.name = 'ApiError'
     err.status = res.status
     throw err
+  }
+  if (res.status === 204) {
+    return null as unknown as T
   }
   return (isJson ? res.json() : (null as unknown)) as T
 }

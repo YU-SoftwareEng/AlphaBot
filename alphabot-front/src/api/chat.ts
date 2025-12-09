@@ -73,3 +73,9 @@ export async function listChats(): Promise<BackendChat[]> {
   })
 }
 
+export async function deleteChat(chatId: number): Promise<void> {
+  return apiFetch<void>(`/api/rooms/${chatId}`, {
+    method: 'DELETE',
+  })
+}
+

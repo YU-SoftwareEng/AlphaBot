@@ -1,10 +1,10 @@
 import React, { type ChangeEvent, useState } from 'react';
 import styled from 'styled-components';
 
-import type { Category } from './category.types'; 
+import type { Category } from './category.types';
 import { useCategoryMutations } from '../../hooks/useCategoryMutations';
 import { AxiosError } from 'axios';
-import Button from '../Button/Button'; 
+import Button from '../Button/Button';
 
 // --- Styled Components (이전과 동일) ---
 
@@ -104,7 +104,7 @@ export const CategoryList: React.FC<Props> = ({
 }) => {
   const { deleteMutation } = useCategoryMutations();
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -142,32 +142,30 @@ export const CategoryList: React.FC<Props> = ({
         {categories.length > 0 ? (
           categories.map((cat) => (
             // 👇 [수정 1] cat.category_id -> cat.id
-            <CategoryCard key={cat.id}> 
+            <CategoryCard key={cat.category_id}>
               <CardContent>
                 <CardTitle>{cat.title}</CardTitle>
                 <CardMeta>
                   생성일: {new Date(cat.created_at).toLocaleString()}
                 </CardMeta>
               </CardContent>
-              
+
               {isAdmin && (
                 <CardActions>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="small"
                     onClick={() => onEdit(cat)}
                   >
                     수정
                   </Button>
                   <Button
-                    variant="ghost" 
+                    variant="ghost"
                     size="small"
-                    // 👇 [수정 2] cat.category_id -> cat.id
-                    onClick={() => handleDelete(cat.id)} 
+                    onClick={() => handleDelete(cat.category_id)}
                     disabled={
                       deleteMutation.isPending &&
-                      // 👇 [수정 3] cat.category_id -> cat.id
-                      deleteMutation.variables === cat.id 
+                      deleteMutation.variables === cat.category_id
                     }
                   >
                     삭제
@@ -184,10 +182,10 @@ export const CategoryList: React.FC<Props> = ({
       {/* 페이지네이션 UI */}
       {totalPages > 1 && (
         <PaginationWrapper>
-          <Button 
-            variant="ghost" 
-            size="small" 
-            onClick={() => onPageChange(page - 1)} 
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
           >
             이전
@@ -195,10 +193,10 @@ export const CategoryList: React.FC<Props> = ({
           <span>
             Page {page} of {totalPages}
           </span>
-          <Button 
-            variant="ghost" 
-            size="small" 
-            onClick={() => onPageChange(page + 1)} 
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
           >
             다음

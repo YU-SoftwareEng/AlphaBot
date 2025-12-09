@@ -75,7 +75,7 @@ export const CategoryForm: React.FC<Props> = ({ categoryToEdit, onClose }) => {
 
   // API 훅 사용
   const { createMutation, updateMutation } = useCategoryMutations();
-  
+
   const isEditing = !!categoryToEdit;
   const mutation = isEditing ? updateMutation : createMutation;
 
@@ -102,7 +102,7 @@ export const CategoryForm: React.FC<Props> = ({ categoryToEdit, onClose }) => {
     try {
       if (isEditing && categoryToEdit) {
         // 수정 (id 사용)
-        await updateMutation.mutateAsync({ id: categoryToEdit.id, data });
+        await updateMutation.mutateAsync({ id: categoryToEdit.category_id, data });
         alert('수정되었습니다.');
       } else {
         // 생성
@@ -128,7 +128,7 @@ export const CategoryForm: React.FC<Props> = ({ categoryToEdit, onClose }) => {
     <ModalOverlay onClick={onClose}>
       <FormContainer onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
         <ModalTitle>{isEditing ? '카테고리 수정' : '새 카테고리 추가'}</ModalTitle>
-        
+
         <StyledInput
           type="text"
           value={title}
@@ -136,13 +136,13 @@ export const CategoryForm: React.FC<Props> = ({ categoryToEdit, onClose }) => {
           placeholder="카테고리 이름을 입력하세요"
           autoFocus
         />
-        
+
         {error && <ErrorText>{error}</ErrorText>}
 
         <ButtonContainer>
           <Button
             type="button"
-            variant="ghost" 
+            variant="ghost"
             size="medium"
             onClick={onClose}
             disabled={mutation.isPending}

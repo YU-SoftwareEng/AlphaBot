@@ -654,6 +654,28 @@ def update_chat_room_for_user(
     return chat
 
 
+def delete_chat_room(
+    db: Session,
+    *,
+    room_id: int,
+    current_user: User,
+) -> None:
+    """채팅방을 영구 삭제합니다."""
+    chat = (
+        db.query(Chat)
+        .filter(Chat.chat_id == room_id, Chat.user_id == current_user.user_id)
+        .first()
+    )
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat room not found or permission denied",
+        )
+    
+    db.delete(chat)
+    db.commit()
+
+
 
 def normalize_stock_code(raw_code: str) -> str:
     """종목 코드를 정규화(트림, 대문자, 길이 제한) 후 검증합니다."""

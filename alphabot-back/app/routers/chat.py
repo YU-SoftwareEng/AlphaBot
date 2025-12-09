@@ -24,7 +24,9 @@ from app.services.chat_service import (
     list_user_chat_rooms,
     create_chat_room_for_user,
     get_chat_room_by_stock_for_user,
+    get_chat_room_by_stock_for_user,
     update_chat_room_for_user,
+    delete_chat_room,
 )
 
 router = APIRouter(tags=["chat"])
@@ -156,3 +158,13 @@ def update_chat_room(
         current_user=current_user,
         chat_in=chat_in,
     )
+
+
+@router.delete("/rooms/{room_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_chat_room_endpoint(
+    room_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """채팅방을 영구 삭제합니다."""
+    delete_chat_room(db, room_id=room_id, current_user=current_user)
