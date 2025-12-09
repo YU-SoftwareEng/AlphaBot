@@ -1,4 +1,4 @@
-![AlphaBot Use Case Diagram](./useCaseDiagram.png)
+![AlphaBot Use Case Diagram](./Image_Userinterfaceprototype/useCaseDiagram.png)
 
 ### Use Case #1 : Log-in
 
