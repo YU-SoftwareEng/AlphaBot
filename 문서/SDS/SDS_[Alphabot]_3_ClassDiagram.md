@@ -676,7 +676,6 @@ classDiagram
 
 ---
 
-
 ## 4. 채팅 메시지와 저장과 채팅방 삭제를 위한 class diagram
 ```mermaid
 classDiagram
@@ -763,7 +762,7 @@ classDiagram
 ```
 ---
 
-### 4.1 ChatApiClient (Interface)
+### 4.1 ChatApiClient
 **Class Description**
 : 채팅 관련 API를 호출하는 인터페이스입니다.
 **Operations**
@@ -780,7 +779,7 @@ classDiagram
 
 ---
 
-### 4.2 BookmarkApiClient (Interface)
+### 4.2 BookmarkApiClient
 **Class Description**
 : 북마크(메시지 저장) 관련 API를 호출하는 인터페이스입니다.
 
@@ -901,6 +900,7 @@ classDiagram
   : 북마크 정보를 수정합니다.
 
 ---
+
 # 5. 채팅을 위한 Chat Class diagram
 
 ```mermaid
