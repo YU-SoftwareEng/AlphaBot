@@ -84,14 +84,55 @@ const TrashPage: React.FC = () => {
     }
   };
 
-  // 백엔드에서 영구 삭제를 지원하지 않으므로 UI에서 숨김 처리
-  /*
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('이 항목을 영구적으로 삭제하시겠습니까?\n삭제된 항목은 복구할 수 없습니다.')) {
-      // API call to delete permanently
+      try {
+        await chatApi.deleteChat(id);
+        await fetchTrashedChats();
+        setSelectedItems(prev => prev.filter(itemId => itemId !== id));
+      } catch (error) {
+        console.error('Failed to delete chat:', error);
+        alert('채팅방을 삭제하지 못했습니다.');
+      }
     }
   };
-  */
+
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) {
+      alert('삭제할 항목을 선택해주세요.');
+      return;
+    }
+
+    if (!window.confirm(`선택한 ${selectedItems.length}개의 항목을 영구 삭제하시겠습니까?\n삭제된 항목은 복구할 수 없습니다.`)) {
+      return;
+    }
+
+    try {
+      await Promise.all(selectedItems.map(id => chatApi.deleteChat(id)));
+      await fetchTrashedChats();
+      setSelectedItems([]);
+      alert('선택한 항목이 영구 삭제되었습니다.');
+    } catch (error) {
+      console.error('Failed to delete selected chats:', error);
+      alert('일부 항목을 삭제하지 못했습니다.');
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    if (trashedChats.length === 0) return;
+    if (!window.confirm('휴지통을 비우시겠습니까? 모든 항목이 영구 삭제됩니다.')) {
+      return;
+    }
+    try {
+      await Promise.all(trashedChats.map(chat => chatApi.deleteChat(chat.chat_id)));
+      await fetchTrashedChats();
+      setSelectedItems([]);
+      alert('휴지통을 비웠습니다.');
+    } catch (error) {
+      console.error('Failed to empty trash:', error);
+      alert('휴지통을 비우지 못했습니다.');
+    }
+  };
 
   return (
     <Container>
@@ -122,15 +163,12 @@ const TrashPage: React.FC = () => {
               <ActionButton disabled={selectedItems.length === 0} onClick={handleRestoreSelected}>
                 <FaUndo /> 선택 복원
               </ActionButton>
-              {/* 영구 삭제 기능 미지원으로 숨김 */}
-              {/* 
               <ActionButton danger disabled={selectedItems.length === 0} onClick={handleDeleteSelected}>
                 <FaTrash /> 선택 삭제
               </ActionButton>
               <ActionButton danger onClick={handleEmptyTrash}>
                 <FaTrash /> 휴지통 비우기
-              </ActionButton> 
-              */}
+              </ActionButton>
             </RightActions>
           </ActionBar>
         )}
@@ -165,12 +203,9 @@ const TrashPage: React.FC = () => {
                   <RestoreButton onClick={() => handleRestore(chat.chat_id)}>
                     <FaTrashRestore /> 복원
                   </RestoreButton>
-                  {/* 영구 삭제 버튼 숨김 */}
-                  {/* 
                   <DeleteButton onClick={() => handleDelete(chat.chat_id)}>
                     <FaTrash /> 영구 삭제
-                  </DeleteButton> 
-                  */}
+                  </DeleteButton>
                 </ItemActions>
               </ItemCard>
             ))}
@@ -375,7 +410,6 @@ const RestoreButton = styled.button`
   }
 `;
 
-/*
 const DeleteButton = styled.button`
   display: flex;
   align-items: center;
@@ -394,7 +428,6 @@ const DeleteButton = styled.button`
     background: #fdd;
   }
 `;
-*/
 
 const EmptyState = styled.div`
   display: flex;

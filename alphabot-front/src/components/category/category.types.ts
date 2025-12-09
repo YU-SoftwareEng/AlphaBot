@@ -3,13 +3,12 @@
  * (POST, PUT) /api/categories 응답
  */
 export interface Category {
-  id: number;
+  category_id: number;
   title: string;
   item_count: number;
   created_at: string;
-  color?: string; 
-  // 백엔드에서 category_id로 줄 수도 있으므로 선택적 속성 추가
-  category_id?: number;
+  color?: string;
+  id?: number; // 호환성 위해 남겨둠 (삭제 예정)
 }
 
 /**
