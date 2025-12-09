@@ -140,11 +140,11 @@ export const CategoryAdminPage: React.FC = () => {
     }
     return <div>오류가 발생했습니다: [Status: {statusCode}] {error.message}</div>;
   }
-  
+
   return (
     <PageWrapper>
-      <PageLayoutLimiter> 
-        
+      <PageLayoutLimiter>
+
         {/* 5.  뒤로가기 버튼 (as={Link} 사용) */}
         <HeaderContainer>
           <Button
@@ -161,30 +161,22 @@ export const CategoryAdminPage: React.FC = () => {
         <ContentContainer>
           <PageHeader>
             <PageTitle>카테고리 관리</PageTitle>
-            {isAdmin && (
-              <Button 
-                variant="primary"
-                size="small"
-                onClick={handleCreateNew} 
-              >
-                + 새 카테고리 생성
-              </Button>
-            )}
+            <Button
+              variant="primary"
+              size="small"
+              onClick={handleCreateNew}
+            >
+              + 새 카테고리 생성
+            </Button>
           </PageHeader>
-        
-          {!isAdmin && (
-            <p style={{ color: 'gray', fontStyle: 'italic' }}>
-              알림: 카테고리 관리는 관리자만 가능합니다. (403 UI 처리)
-            </p>
-          )}
 
-          {showForm && isAdmin && (
+          {showForm && (
             <CategoryForm categoryToEdit={editingCategory} onClose={handleCloseForm} />
           )}
 
           <CategoryList
             categories={data?.categories ?? []}
-            isAdmin={isAdmin}
+            isAdmin={true}
             onEdit={handleEdit}
             onSearch={handleSearch}
             onPageChange={handlePageChange}
