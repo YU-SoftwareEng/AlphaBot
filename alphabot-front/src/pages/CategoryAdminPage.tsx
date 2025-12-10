@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+// import { useAuth } from '@/hooks/useAuth';
 import { useCategories } from '@/hooks/useCategories';
 import { CategoryList } from '@/components/category/CategoryList';
 import { CategoryForm } from '@/components/category/CategoryForm';

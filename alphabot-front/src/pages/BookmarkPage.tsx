@@ -291,7 +291,7 @@ export const BookmarkPage: React.FC = () => {
                 key={cat.id}
                 $active={selectedCategory === cat.id}
                 $color={cat.color || '#999'}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => setSelectedCategory(cat.id ?? 0)}
               >
                 <FaFolder /> {cat.title}
                 {cat.id === 0
