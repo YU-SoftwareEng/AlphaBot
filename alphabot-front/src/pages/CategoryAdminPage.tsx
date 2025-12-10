@@ -66,7 +66,7 @@ const PageTitle = styled.h1`
 // --- Component ---
 
 export const CategoryAdminPage: React.FC = () => {
-  const { isAdmin } = useAuth();
+  // const { isAdmin } = useAuth(); // isAdmin 미사용으로 제거
   const [query, setQuery] = useState<CategoryQuery>({ page: 1, page_size: 10, search: '' });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showForm, setShowForm] = useState(false);
