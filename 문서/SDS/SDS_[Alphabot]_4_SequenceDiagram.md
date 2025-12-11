@@ -83,96 +83,62 @@ sequenceDiagram
 
 ## 2. 채팅
 
-### 2.1 종목 검색
+### 2.1 종목별 채팅방 입장 (Stock Chat Entry)
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as "인증 사용자"
     participant FE as "시스템 (Frontend)"
-    participant BE as "시스템 (Backend/Search)"
+    participant BE as "시스템 (Backend)"
 
-    User->>FE: (검색창 포커스)
-    opt Ext 2a: 입력이 짧음 (포커스 시)
-        FE->>BE: 2a1. 최근/인기 검색 요청
-        BE-->>FE: 2a1. 최근/인기 검색 결과
-        FE-->>User: 2a1. 인기/최근 검색 프롬프트 노출
+    User->>FE: 1. 종목 코드/이름 입력 및 선택
+    FE->>BE: 2. 채팅방 입장 요청 (PUT /api/v1/chats/by-stock/{stock_code})
+    
+    BE->>BE: 2. 종목 코드 정규화 및 채팅방 조회/생성
+    
+    alt 조회/생성 성공
+        BE-->>FE: 3. 채팅방 정보 반환 (ChatID, Title, Existed)
+        FE->>FE: 3. 채팅방 화면으로 전환
+        FE-->>User: 4. 채팅방 입장 완료
+    else 종목 없음/오류
+        BE-->>FE: 3. 오류 응답 (400/404)
+        FE-->>User: 4. "존재하지 않는 종목입니다" 알림
     end
-
-    loop 1. 인증 사용자가 키워드 입력 (자동완성)
-        User->>FE: 1. 키워드 입력 (Trigger)
-        FE->>BE: 2. 자동완성 요청 (q=…)
-        alt Ext 3a: API 지연/오류
-            BE-->>FE: 3a. 오류/Timeout
-            FE-->>User: 3a1. 오류 표시, 캐시 사용 또는 재시도 아이콘
-        else Ext 4a: 오타/동명이인 포함
-            BE->>BE: 2. 인덱스 검색·정렬·오타 보정
-            BE-->>FE: 3. 자동완성 결과 리스트 (보정 후보, 거래소 정보 포함)
-            FE-->>User: 3, 4a1. 결과 리스트 + 거래소 배지/보정 제안 표시
-        end
-    end
-
-    User->>FE: 1. Enter 또는 검색 버튼 클릭
-    FE->>BE: 2. 전체 검색 요청 (q=…)
-
-    alt Ext 4b: 결과 0건
-        BE-->>FE: 4b. 결과 없음
-        FE-->>User: 4b1. "검색 결과가 없습니다" + 제안 표시
-    else 검색 성공
-        BE-->>FE: 3. 전체 검색 결과
-        FE-->>User: 3. 전체 검색 결과 페이지 표시
-    end
-
-    User->>FE: 4. 결과 선택 (리스트 또는 페이지에서)
-    FE->>FE: 4. 종목 상세 화면으로 이동
-    FE->>BE: 4. 최근 검색 기록 저장 (비동기)
 ```
 
-사용자가 종목 검색을 요청한다 → 프론트엔드는 백엔드에 자동완성/전체 검색 요청을 보낸다 → (1. 입력이 짧음) 백엔드가 최근/인기 검색 결과를 반환하면, 프론트엔드는 사용자에게 인기/최근 검색 프롬프트를 표시한다. → (2. API 지연/오류) 백엔드가 오류 응답을 보내면, 프론트엔드는 사용자에게 오류 메시지를 표시하고 캐시 사용 또는 재시도 아이콘을 제공한다. → (3. 오타/동명이인 포함) 백엔드가 보정 후보/거래소 정보를 포함한 검색 결과를 반환하면, 프론트엔드는 사용자에게 결과 리스트 + 거래소 배지/보정 제안을 표시한다. → (4. 결과 0건) 백엔드가 결과 없음 응답을 보내면, 프론트엔드는 사용자에게 "검색 결과가 없습니다" + 제안을 표시한다. → (5. 검색 성공) 백엔드가 전체 검색 결과를 반환하면, 프론트엔드는 사용자에게 전체 검색 결과 페이지를 표시한다.
+사용자가 종목을 선택하여 입장을 시도한다 → 프론트엔드는 백엔드에 `PUT /api/v1/chats/by-stock/{stock_code}`를 요청한다 → 백엔드는 해당 종목에 대한 사용자의 채팅방을 찾거나 새로 생성하여 반환한다 → 성공 시 해당 채팅방으로 화면을 전환한다.
 
 ### 2.2 채팅 및 질의 응답
 ```mermaid
 sequenceDiagram
     actor User
-    participant ChatController
-    participant NLPService
-    participant APIDataConnector
+    participant Frontend
+    participant Backend
     participant AIModel
-    participant ChatRepository
+    participant DB
     
-    User->>ChatController: sendMessage(query)
-    activate ChatController
+    User->>Frontend: 메시지 입력 후 전송
+    Frontend->>Backend: POST /api/rooms/{room_id}/chat-completions
+    activate Backend
     
-    ChatController->>NLPService: processQuery(query)
-    activate NLPService
-    NLPService->>AIModel: analyzeIntent(query)
+    Backend->>AIModel: 대화 생성 요청 (User Msg + Context)
     activate AIModel
-    AIModel-->>NLPService: intent(e.g., 'StockPriceInquiry')
+    AIModel-->>Backend: 응답 생성 (Assistant Msg)
     deactivate AIModel
     
-    alt Intent requires real-time data
-        NLPService->>APIDataConnector: fetchData(intent, stockCode)
-        activate APIDataConnector
-        APIDataConnector-->>NLPService: realTimeData
-        deactivate APIDataConnector
-    else Intent is general knowledge/analysis
-        NLPService->>AIModel: generateResponse(query, context)
-        activate AIModel
-        AIModel-->>NLPService: rawResponse
-        deactivate AIModel
-    end
+    Backend->>DB: 사용자 메시지 및 AI 응답 저장
+    activate DB
+    DB-->>Backend: 저장 완료
+    deactivate DB
     
-    NLPService->>ChatRepository: saveHistory(query, response)
-    activate ChatRepository
-    ChatRepository-->>NLPService: success()
-    deactivate ChatRepository
+    Backend-->>Frontend: 응답 반환 (UserMsg + AssistantMsg)
+    deactivate Backend
     
-    NLPService-->>ChatController: finalResponse
-    deactivate NLPService
-    
-    ChatController->>User: displayMessage(finalResponse)
-    deactivate ChatController
+    Frontend->>User: 메시지 표시
 ```
+
+사용자가 메시지를 입력하면 프론트엔드는 `POST /api/rooms/{room_id}/chat-completions`를 호출한다. 백엔드는 AI 모델을 통해 응답을 생성하고, 사용자와 AI의 메시지를 모두 DB에 저장한 후 반환한다.
 
 ### 2.3 채팅 메시지 저장
 ```mermaid
@@ -579,39 +545,22 @@ sequenceDiagram
     actor User as "인증 사용자"
     participant FE as "시스템 (Frontend)"
     participant BE as "시스템 (Backend/DB)"
-    participant Realtime as "시스템 (Real-time Service)"
-    participant Notif as "시스템 (Notification Service)"
 
-    User->>FE: 1. 댓글 작성(텍스트/이미지/멘션) 후 "등록" (Trigger)
-    FE->>BE: 2. 새 댓글 생성 요청
+    User->>FE: 1. 댓글 작성
+    FE->>BE: 2. 댓글 생성 요청 (POST /api/comments)
 
-    alt Ext 2a: 형식/용량 초과 또는 Ext 2b: 필터 위반
-        BE->>BE: 2. 입력 검증 실패 (유효성/필터)
-        BE-->>FE: 2a1/2b1. 등록 실패 응답 (오류 메시지)
-        FE-->>User: 2a1/2b1. 오류 표시 (내용 보존, 저장 차단)
-    else Ext 3a: 서버/네트워크 오류
-        BE->>BE: 2. 입력 검증 통과
-        BE-->>BE: 3. DB 저장 시도 (실패)
-        BE-->>FE: 3a. 서버 오류 응답
-        FE->>FE: 3a1. 댓글 임시 저장
-        FE-->>User: 3a1. 오류 및 재시도 버튼 제공
-    else Main Flow: 댓글 등록 성공
-        BE->>BE: 2. 입력 검증 통과
-        BE->>BE: 3. 댓글 저장 (DB)
-        BE-->>FE: 3. 댓글 생성 성공 응답
-
-        par 실시간 스레드 반영
-            BE->>Realtime: 3. 새 댓글 이벤트 전송
-            Realtime-->>FE: 3. 웹소켓/SSE 등으로 새 댓글 전송
-            FE->>FE: 3. 스레드에 새 댓글 즉시 반영
-        and 알림 전송 (멘션/작성자)
-            BE->>Notif: 3. 알림 요청 (멘션 대상자 등)
-            Notif-->>User: 3. 푸시/웹 알림 전송
-        end
+    alt 입력 검증 실패
+        BE-->>FE: 3. 오류 응답
+        FE-->>User: 4. 오류 메시지 표시
+    else 생성 성공
+        BE->>BE: 3. DB 저장
+        BE-->>FE: 4. 성공 응답 (CommentRead)
+        FE->>FE: 5. 댓글 목록 갱신
+        FE-->>User: 5. 작성 완료 확인
     end
 ```
 
-사용자가 종목 토론 댓글을 작성한다 → 프론트엔드는 백엔드에 새 댓글 생성 요청을 보낸다 → (1. 형식/용량 초과/필터 위반) 백엔드가 입력 검증 실패 응답을 보내면, 프론트엔드는 사용자에게 오류 메시지를 표시하고 내용을 보존한다. → (2. 서버/네트워크 오류) 백엔드가 입력 검증 통과 응답을 보내면, 백엔드는 DB에 댓글 저장을 시도한다 → 저장 실패 시 오류 응답을 보내면, 프론트엔드는 댓글을 임시 저장하고 오류 및 재시도 버튼을 제공한다. → (3. 댓글 등록 성공) 백엔드가 저장 성공 응답을 보내면, 백엔드는 실시간 스레드 반영 및 알림 전송을 요청한다 → 실시간 스레드 반영이 성공 응답을 보내면, 프론트엔드는 스레드에 새 댓글을 즉시 반영한다. → 알림 전송이 성공 응답을 보내면, 사용자에게 푸시/웹 알림을 전송한다.
+사용자가 댓글을 작성하면 프론트엔드는 `POST /api/comments`를 호출한다.
 
 ### 6.3 종목 토론 댓글 조회
 
@@ -621,37 +570,13 @@ sequenceDiagram
     actor User as "인증 사용자"
     participant FE as "시스템 (Frontend)"
     participant BE as "시스템 (Backend/DB)"
-    participant Realtime as "시스템 (Real-time Service)"
 
-    User->>FE: 1. 댓글 영역 열람 (스크롤/클릭) (Trigger)
-    FE->>BE: 2. 댓글 조회 요청 (게시글ID, 페이지 1, 기본 정렬)
+    User->>FE: 1. 댓글 영역 열람
+    FE->>BE: 2. 댓글 목록 요청 (GET /api/comments?stock_code=...)
 
-    alt Ext 2a: 서버/네트워크 오류
-        BE-->>FE: 2a. 오류 응답
-        FE-->>User: 2a1. 오류 메시지 및 재시도 버튼 표시
-    else Ext 3b: 결과 0건
-        BE-->>FE: 3b. 빈 리스트 응답
-        FE-->>User: 3b1. '댓글이 없습니다' / '첫 댓글 작성' 안내
-    else Main Flow: 조회 성공
-        BE->>BE: 2. 댓글 조회, 3a: 스레드 축약, 4a: 삭제/블라인드 처리
-        BE-->>FE: 2. 댓글 리스트 응답 (페이지네이션, 축약/삭제 플래그 포함)
-        FE->>FE: 2. 댓글 렌더링, 3a: '더보기', 4a: 플레이스홀더
-        FE-->>User: 2. 댓글 리스트 표시
-
-        %% 페이지 진입 후 실시간 반영 및 추가 로드 (병렬)
-        par 4. 실시간 변경 사항 반영
-            FE->>Realtime: 웹소켓/SSE 연결
-            Realtime-->>FE: 4. 신규 댓글/변경 사항 실시간 전송
-            FE->>FE: 4. 스레드에 실시간 반영
-        and 3. (옵션) 추가 로드/필터링
-            loop 정렬/필터/더보기 수행
-                User->>FE: 3. "댓글 더보기" 클릭 / 정렬/필터 변경
-                FE->>BE: 3. 댓글 조회 요청 (다음 페이지/필터 적용)
-                BE-->>FE: 3. 추가 댓글 리스트 응답
-                FE->>FE: 3. 리스트에 추가 렌더링
-            end
-        end
-    end
+    BE->>BE: 3. DB 조회 (페이지네이션)
+    BE-->>FE: 4. 댓글 목록 반환 (CommentList)
+    FE-->>User: 5. 댓글 표시
 ```
 
-사용자가 종목 토론 댓글 영역을 열람한다 → 프론트엔드는 백엔드에 댓글 조회 요청을 보낸다 → (1. 서버/네트워크 오류) 백엔드가 오류 응답을 보내면, 프론트엔드는 사용자에게 오류 메시지 및 재시도 버튼을 표시한다. → (2. 결과 0건) 백엔드가 빈 리스트 응답을 보내면, 프론트엔드는 사용자에게 "댓글이 없습니다" / "첫 댓글 작성" 안내를 표시한다. → (3. 조회 성공) 백엔드가 댓글 리스트 응답을 보내면, 프론트엔드는 댓글 리스트를 표시한다 → (4. 실시간 변경 사항 반영) 프론트엔드는 웹소켓/SSE 연결을 요청하고 신규 댓글/변경 사항을 실시간 전송한다 → 실시간 반영이 성공 응답을 보내면, 프론트엔드는 스레드에 실시간 반영한다. → (5. 추가 로드/필터링) 사용자가 정렬/필터/더보기를 수행하면, 프론트엔드는 추가 댓글 리스트를 조회하고 리스트에 추가 렌더링한다.
+사용자가 댓글 영역을 보면 `GET /api/comments`를 통해 댓글 목록을 조회한다.
