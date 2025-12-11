@@ -968,7 +968,7 @@ classDiagram
 
 ### 5.1 ChatController
 **Class Description**  
-: 사용자 입력 메세지를 받아 적절한 서비스(NLP, Help, Share)로 라우팅하는
+: 사용자 입력 메세지를 받아 적절한 서비스(NLP)로 라우팅하는
 시스템의 입구
 
 ### Attributes
@@ -1035,386 +1035,7 @@ classDiagram
 
 ---
 
-# 6. 채팅 공유를 위한 Share Chat Class Diagram
-
-```mermaid
-classDiagram
-    direction LR
-
-    %% 1. Controller & User (Start/End Points)
-    class User
-    class ChatController {
-        +void shareRequest(conversationId: string, range: int)
-        +void shareCompletedMessage()
-    }
-
-    %% 2. Share Service (Central Orchestrator)
-    class ShareService {
-        -ChatRepository chatRepository
-        -FileGenerator fileGenerator
-        -ExternalShareAPI externalShareAPI
-        +void initiateShare(convId: string, range: int)
-        +boolean sendToPlatform(file: ShareFile, platform: String)
-        -boolean validateContent(history: ChatHistory)
-        -void shareCompleted(convId: string)
-    }
-
-    %% 3. Data & I/O
-    class ChatRepository {
-        -DBConnector dbConnector
-        +ChatHistory getConversationHistory(convId: string, range: int)
-        +void saveHistory(message: Message)
-    }
-
-    class FileGenerator {
-        -Map~String, String~ formatSetting
-        +ShareFile generateShareableFile(history: ChatHistory, format: String)
-        -byte[] formatAsImage(history: ChatHistory)
-        -String formatAsText(history: ChatHistory)
-    }
-
-    class ExternalShareAPI {
-        -Map~String, String~ platformUrl
-        -String authToken
-        +boolean sendToPlatform(file: ShareFile, platform: String)
-        +boolean checkPlatformStatus(platform: String)
-    }
-
-    %% 4. Entity/Data Objects
-    class ChatHistory {
-        -List~Message~ messages
-        +List~Message~ getMessages(range: int)
-    }
-
-    class ShareFile {
-        -String fileName
-        -String fileType
-        +byte[] getContentData()
-    }
-
-
-    %% Relationships (Associations / Aggregations)
-    
-    User "1" -- "1" ChatController : sends_request >
-    
-    ChatController "1" --> "1" ShareService : calls
-
-    ShareService "1" *-- "1" ChatRepository : aggregates (for history)
-    ShareService "1" *-- "1" FileGenerator : aggregates (for file creation)
-    ShareService "1" *-- "1" ExternalShareAPI : aggregates (for external send)
-
-    ShareService "1" ..> ChatHistory : uses
-    FileGenerator "1" -- "1" ChatHistory : generates_from <
-    ExternalShareAPI "1" -- "1" ShareFile : sends <
-```
----
-
-### 6.1 ShareService(부가 서비스 계층 – 공유)
-**Class Description**  
-: 대화 기록을 파일로 생성하고, 외부 플랫폼으로 전송하여 공유하는 전체 프로세스를 관리하는 서비스.
-
-### Attributes
-- **fileRepository** 
-- **fileGenerator**
-- **chatRepository**
-- **externalShareAPI**
-
-### Operations
-- **initiateShare** *(convId: string, range: int)*  
-- **sendToPlatform** *(file: ShareFile, platform: String)* 
-- **validateContent** *(history: ChatHistory)*
-- **shareCompleted** *(convId: string)*
-
----
-
-### 6.2 FileGenerator (데이터 처리 계층 - 파일 생성)
-**Class Description**  
-: 공유를 목적으로 대화 기록(ChatHistory)을 이미지(스크린샷), 텍스트 등 선택된 형태의 파일(ShareFile)로 변환하여 생성.
-
-### Attributes
-- **formatSetting**
-
-### Operations
-- **generateShareableFile** *(history: ChatHistory, format: String)*  
-- **formatAsImage** *(history: ChatHistory)* 
-- **formatAsText** *(history: ChatHistory)*
-
----
-
-### 6.3 ExternalShareAPI (데이터 연동 계층 - 공유)
-**Class Description**  
-: 생성된 파일을 카카오톡, X, 이메일 등 외부 플랫폼으로 전송하는 인터페이스
-
-### Attributes
-- **platformUrl**
-- **authToken**
-
-### Operations
-- **sendToPlatform** *((file: ShareFile, platform: String))*  
-- **checkPlatformStatus** *((platform: String))* 
-- **handleNetworkError** *(platform: String)*
-
----
-
-### 6.4 ChatRepository (데이터 접근 계층)
-**Class Description**  
-: 챗봇의 대화 기록(메시지)을 데이터베이스에 저장하고 조회하는 역할
-
-### Attributes
-- **dbConnector**
-- **tableName**
-
-### Operations
-- **saveHistory** *((message: Message))*  
-- **getConversationHistory** *(((convId: string, range: int)))* 
-- **findLastMessage** *((convId: string))*
-
----
-
-# 7. 도움말 기능을 위한 Class Diagram
-```mermaid
-classDiagram
-    direction LR
-
-    %% 1. Controller & User
-    class User {
-        +Long getUserId()
-    }
-
-    class ChatController {
-        -HelpService helpService
-        +FinalResponse helpRequest(query: string)
-        +void displayMessage(response: FinalResponse)
-    }
-
-    %% 2. Help Service (Central Orchestrator)
-    class HelpService {
-        -FAQRepository faqRepository
-        -AIGuidanceModel aiGuidanceModel
-        +FinalResponse processHelpRequest(query: string)
-        +GuidanceContent getGeneralGuide()
-        +GuidanceContent generateSpecificGuidance(query: string)
-    }
-
-    %% 3. Data & Model
-    class FAQRepository {
-        -DBConnector dbConnector
-        -String guideTable
-        +GuidanceContent getGeneralGuide()
-        +List~GuidanceContent~ searchFaqByKeyword(keyword: string)
-    }
-
-    class AIGuidanceModel {
-        -MLModel guidanceEngine
-        -Map~String, String~ functionTemplate
-        +GuidanceContent generateSpecificGuidance(query: string)
-        +List~String~ getSupportedFunctions()
-    }
-
-    %% 4. Entity/Data Objects
-    class FinalResponse {
-        -String displayMessage
-    }
-
-    class GuidanceContent {
-        -String title
-        -String content
-        -List~String~ links
-        +String getTitle()
-        +String getContent()
-        +boolean hasLinks()
-    }
-
-
-    %% Relationships (Associations / Aggregations)
-
-    ChatController "1" --> "1" HelpService : calls
-
-    HelpService "1" *-- "1" FAQRepository : aggregates (for general guide)
-    HelpService "1" *-- "1" AIGuidanceModel : aggregates (for specific guide)
-
-    ChatController "1" ..> FinalResponse : returns/uses
-    HelpService "1" ..> FinalResponse : returns
-
-    FAQRepository "1" ..> GuidanceContent : returns
-    AIGuidanceModel "1" ..> GuidanceContent : returns
-    HelpService "1" ..> GuidanceContent : processes
-```
----
-
-### 7.1 FAQRepository (데이터 접근 계층 - FAQ)
-
-| Class | **FAQRepository** |
-| :--- | :--- |
-| **Description** | 자주 묻는 질문(FAQ)이나 일반적인 사용 가이드라인 데이터를 저장소에서 조회하고 관리 |
-| **Attribute** | Name | Type | Visibility | Description |
-| | dbConnector | DBConnector | private | 데이터베이스 연결 객체 |
-| | guideTable | String | private | 가이드라인 정보가 저장된 테이블 |
-| **Operations** | Name | Type | Visibility | Description |
-| | getGeneralGuide | (void) | GuidanceContent | public | 일반적인 사용 가이드를 조회 |
-| | searchFaqByKeyword | (keyword: string) | List<GuidanceContent> | public | 키워드로 관련 FAQ를 검색 |
-| | getLatestUpdateDate | (void) | DateTime | public | FAQ 데이터의 최종 업데이트 시점을 조회 |
-
----
-
-### 7.2 AIGuidanceModel (모델/분석 계층 - 안내 생성)
-
-| Class | **AIGuidanceModel** |
-| :--- | :--- |
-| **Description** | 특정 기능 사용법과 같은 복잡한 안내 요청에 대해 AI 모델을 사용하여 상세 설명 및 사용 예시를 생성. |
-| **Attribute** | Name | Type | Visibility | Description |
-| | guidanceEngine | MLModel | private | 안내문 생성을 위한 학습된 모델 엔진 |
-| | functionTemplate | Map<String, String> | private | 기능별 안내 템플릿 저장소 |
-| **Operations** | Name | Type | Visibility | Description |
-| | generateSpecificGuidance | (query: string) | GuidanceContent | public | 특정 기능에 대한 맞춤형 안내문을 생성 |
-| | getSupportedFunctions | (void) | List<String> | public | 안내 생성이 가능한 기능 목록을 조회 |
-| | formatExample | (functionName: String) | String | private | 특정 기능에 대한 사용 예시를 구성 |
-
----
-
-### 7.3 GuidanceContent (안내/도움말 콘텐츠)
-
-| Class | **GuidanceContent** |
-| :--- | :--- |
-| **Description** | HelpService가 사용자에게 전달하는 도움말/가이드의 내용을 담는 데이터 객체 |
-| **Attribute** | Name | Type | Visibility | Description |
-| | title | String | private | 안내 메시지의 제목 |
-| | content | String | private | 안내 메시지의 상세 내용 |
-| | links | List<String> | private | 관련 추가 자료 링크 목록 |
-| **Operations** | Name | Type | Visibility | Description |
-| | getTitle | (void) | String | public | 안내문의 제목을 반환 |
-| | getContent | (void) | String | public | 안내문의 상세 내용을 반환 |
-| | hasLinks | (void) | boolean | public | 안내문에 링크가 포함되어 있는지 확인 |
-
----
-
-### 7.4 HelpService (부가 서비스 계층 - 도움말)
-**Class Description**  
-: 사용자 요청을 처리하여 일반 가이드(FAQ) 또는 AI 기반의 특정 기능 안내를 제공하는 서비스.
-
-### Attributes
-- **faqRepository**
-- **aiGuidanceModel**
-
-### Operations
-- **processHelpRequest** *((message: Message))*  
-- **getGeneralGuide()** 
-- **generateSpecificGuidance** *((query: string))*
-- **isSpecificQuery** *(((query: string)))*
-
----
-
-## 8. 검색 기록: Class Diagram
-
-```mermaid
-classDiagram
-  class SearchScreen {
-    -searchController: SearchController
-    -currentHistoryList: List~SearchHistoryItem~
-    +onSearchBoxClick()
-    +onDeleteItemClick(itemId: String)
-    +displayHistory(historyList: List~SearchHistoryItem~)
-    +displayNoHistoryMessage()
-    +removeItemFromList(itemId: String)
-  }
-
-  class SearchController {
-    -historyDatabase: HistoryDatabase
-    +loadSearchHistory(userId: String): List~SearchHistoryItem~
-    +deleteHistoryItem(itemId: String): boolean
-  }
-
-  class HistoryDatabase {
-    +getHistory(userId: String): List~SearchHistoryItem~
-    +deleteItem(itemId: String): boolean
-  }
-
-  class SearchHistoryItem {
-    -itemId: String
-    -userId: bigint
-    -query: String
-    -timestamp: datetime
-  }
-
-SearchScreen "1" -- "1" SearchController : uses >
-SearchController "1" -- "1" HistoryDatabase : uses >
-SearchScreen o-- "0..*" SearchHistoryItem : displays
-HistoryDatabase *-- "0..*" SearchHistoryItem : stores
-```
----
-
-### 8.1 SearchScreen
-**Class Description**  
-: 사용자에게 검색 기록을 보여주고, 사용자 입력을 받아 SearchController에 전달하는 UI(표현) 계층이다.
-
-### Attributes
-- **searchController** *(SearchController, private)*  
-  : 비즈니스 로직 처리를 요청하기 위한 컨트롤러 인스턴스.
-- **currentHistoryList** *(List<SearchHistoryItem>, private)*  
-  : 현재 화면에 표시되고 있는 검색 기록 목록.
-
-### Operations
-- **onSearchBoxClick** *(→ void, public)*  
-  : 사용자가 검색창을 클릭했을 때의 이벤트 핸들러. (내부적으로 SearchController.loadSearchHistory 호출)
-- **onDeleteItemClick** *(itemId: string → void, public)*  
-  : 사용자가 특정 항목의 삭제 버튼을 클릭했을 때의 이벤트 핸들러. (내부적으로 SearchController.deleteHistoryItem 호출)
-- **displayHistory** *(historyList: List<SearchHistoryItem> → void, public)*  
-  : 컨트롤러로부터 받은 검색 기록 목록을 화면에 렌더링.
-- **displayNoHistoryMessage** *(→ void, public)*  
-  : 기록이 없을 경우 "검색 기록 없음" 메시지를 표시.
-- **removeItemFromList** *(itemId: string → void, public)*  
-  : currentHistoryList와 화면에서 특정 항목을 제거 (삭제 성공 시 호출됨).
-
----
-
-### 8.2 SearchController
-**Class Description**  
-: SearchScreen의 요청을 받아 비즈니스 로직을 수행하고, HistoryDatabase를 통해 데이터 작업을 지시하는 컨트롤러(로직) 계층이다.
-
-### Attributes
-- **historyDatabase** *(HistoryDatabase, private)*  
-  : 데이터베이스 작업을 수행하기 위한 데이터 접근 객체.
-
-### Operations
-- **loadSearchHistory** *(userId: string → List<SearchHistoryItem>, public)*  
-  : 사용자의 검색 기록을 HistoryDatabase에서 로드하여 반환.
-- **deleteHistoryItem** *(itemId: string → boolean, public)*  
-  : 특정 검색 기록 항목의 삭제를 HistoryDatabase에 요청하고 성공 여부를 반환.
-
----
-
-### 8.3 HistoryDatabase
-**Class Description**  
-: 검색 기록 데이터의 영속성(저장, 조회, 삭제)을 실제로 담당하는 데이터 접근(저장소) 계층이다.
-
-### Attributes
-
-### Operations
-- **getHistory** *(userId: string → List<SearchHistoryItem>, public)*  
-  : 데이터베이스에서 특정 사용자의 모든 검색 기록을 조회하여 반환.
-- **deleteItem** *(itemId: string → boolean, public)*  
-  : 데이터베이스에서 itemId와 일치하는 항목을 삭제하고 성공 여부를 반환.
-
-
-### 8.4 SearchHistoryItem
-**Class Description**  
-: 개별 검색 기록 항목을 나타내는 데이터 객체(DTO 또는 Entity)이다.
-
-### Attributes
-- **itemId** *(string, public)*  
-  : 검색 기록 항목의 고유 식별자 (PK).
-- **userId** *(bigint, public)*  
-  : 해당 기록을 소유한 사용자의 ID (FK).
-- **query** *(string, public)*  
-  : 사용자가 입력했던 실제 검색어.
-- **timestamp** *(datetime, public)*  
-  : 해당 검색이 발생한 시각.
-
-### Operations
-
----
-
-## 9. 종목 상세 정보 조회 : classDiagram
+## 6. 종목 상세 정보 조회 : classDiagram
 
 ```mermaid
 classDiagram
@@ -1454,7 +1075,7 @@ classDiagram
 ```
 ---
 
-### 9.1 StockAnalysisView
+### 6.1 StockAnalysisView
 **Class Description**  
 : 별도 분석 영역의 UI, 사용자 입력 및 탭 전환 이벤트를 수신합니다.
 
@@ -1472,7 +1093,7 @@ classDiagram
 
 ---
 
-### 9.2 StockViewModel
+### 6.2 StockViewModel
 **Class Description**
 : UI에 표시될 데이터 상태를 관리하고, View의 요청에 따라 데이터를 Repository에 요청합니다.
 
@@ -1486,7 +1107,7 @@ classDiagram
 
 ---
 
-### 9.3 StockRepository
+### 6.3 StockRepository
 **Class Description**
 : 실시간 시세 및 재무 데이터를 외부 API로부터 효율적으로 가져와 데이터 모델로 변환합니다.
 
@@ -1496,13 +1117,13 @@ classDiagram
 
 ---
 
-### 9.4 ExternalAPI
+### 6.4 ExternalAPI
 **Class Description**
 : 실제 증권사나 금융 데이터 제공업체의 API 호출을 담당하는 가상 클래스입니다.
 
 ---
 
-### 9.5 StockData
+### 6.5 StockData
 **Class Description**
 : 특정 종목의 현재가, 거래량, 등락률 등 실시간 상세 시세 정보를 담는 데이터 구조입니다.
 
@@ -1516,7 +1137,7 @@ classDiagram
 
 ---
 
-## 10. 재무제표 조회 : classDiagram
+## 7. 재무제표 조회 : classDiagram
 
 ```mermaid
 classDiagram
@@ -1555,7 +1176,7 @@ classDiagram
 ```
 ---
 
-### 10.1 FinancialData
+### 7.1 FinancialData
 **Class Description**  
 : 특정 종목의 재무 상태표, 손익계산서, 현금흐름표 및 PER, PBR, ROE 등 핵심 재무 지표를 담는 데이터 구조입니다.
 
@@ -1571,7 +1192,7 @@ classDiagram
 
 ---
 
-## 11. 휴지통 관리 : classDiagram
+## 8. 휴지통 관리 : classDiagram
 
 ```mermaid
 classDiagram
@@ -1607,7 +1228,7 @@ classDiagram
 ```
 ---
 
-### 11.1 TrashView
+### 8.1 TrashView
 **Class Description**  
 : 휴지통 목록을 출력하고, 항목 복원 또는 영구 삭제와 같은 사용자 입력을 처리합니다.
 
@@ -1623,7 +1244,7 @@ classDiagram
 
 ---
 
-### 11.2 TrashViewModel
+### 8.2 TrashViewModel
 **Class Description**  
 : 휴지통 목록의 상태를 관리하며, 사용자의 복원/삭제 요청에 따라 Repository에 데이터 변경합니다.
 
@@ -1639,7 +1260,7 @@ classDiagram
 
 ---
 
-### 11.3 ItemRepository
+### 8.3 ItemRepository
 **Class Description**  
 : 로컬 DB에서 삭제 플래그가 설정된 항목을 조회하고, 사용자의 요청에 따라 플래그를 변경하거나 영구 삭제합니다.
 
@@ -1651,7 +1272,7 @@ classDiagram
 
 ---
 
-### 11.4 TrashItem
+### 8.4 TrashItem
 **Class Description**  
 : 삭제된 채팅 기록 또는 저장된 답변의 식별 정보, 유형, 내용 미리보기, 삭제 시각 등을 담는 데이터 구조입니다.
 ### Attributes
@@ -1664,10 +1285,6 @@ classDiagram
 
 ---
 
-### 11.5 LocalDB
+### 8.5 LocalDB
 **Class Description**  
 : 실제 챗봇의 대화 기록 및 항목 저장 데이터를 보관하는 로컬 데이터베이스입니다.
-
----
-
-
