@@ -1,6 +1,5 @@
 ## 1. 클래스 다이어그램: User 채팅 및 북마크 관리
 
-
 ```mermaid
 classDiagram
     class users {
@@ -14,6 +13,7 @@ classDiagram
         +int chat_id
         +int user_id
         +string title
+        +string stock_code
         +datetime created_at
         +datetime lastchat_at
         +TrashEnum trash_can
@@ -28,6 +28,7 @@ classDiagram
     }
     class category {
         +int category_id
+        +int user_id
         +string title
         +datetime created_at
     }
@@ -42,13 +43,29 @@ classDiagram
         +string code
         +string company_name
         +string sector
+        +string industry
+        +string country
+        +string website
+        +int full_time_employees
         +text business_summary
         +numeric current_price
+        +numeric previous_close
+        +numeric open
+        +numeric day_high
+        +numeric day_low
         +bigint market_cap
+        +bigint volume
         +numeric pe_ratio
+        +numeric forward_pe
+        +numeric pbr
+        +numeric psr
+        +numeric eps
+        +numeric dividend_rate
         +numeric dividend_yield
+        +timestamp ex_dividend_date
         +string recommendation
-        +datetime last_updated
+        +numeric target_mean_price
+        +timestamp last_updated
     }
     class financial_statements {
         +bigint id
@@ -56,20 +73,47 @@ classDiagram
         +date report_period
         +ReportTypeEnum report_type
         +bigint revenue
+        +bigint gross_profit
+        +bigint operating_income
+        +bigint ebitda
         +bigint net_income
         +bigint total_assets
         +bigint total_liabilities
+        +bigint total_equity
         +bigint operating_cash_flow
+        +bigint investing_cash_flow
+        +bigint financing_cash_flow
+        +bigint free_cash_flow
+        +datetime created_at
+    }
+    class comments {
+        +int comment_id
+        +int user_id
+        +string stock_code
+        +text content
+        +datetime created_at
+    }
+    class news_articles {
+        +int article_id
+        +string category
+        +text title
+        +text content
+        +text url
+        +string source
+        +string published_at_text
         +datetime created_at
     }
 
     users "1" -- "0..n" chat : "소유한다"
     users "1" -- "0..n" messages : "채팅입력한다"
     users "1" -- "0..n" bookmark : "소유한다"
+    users "1" -- "0..n" category : "생성한다"
+    users "1" -- "0..n" comments : "작성한다"
     chat "1" -- "0..n" messages : "포함한다"
     messages "1" -- "0..n" bookmark : "저장한다"
     category "0..1" -- "0..n" bookmark : "카테고리화한다"
     stocks "1" -- "0..n" financial_statements : "참조한다"
+    stocks "1" -- "0..n" comments : "참조한다"
 ```
 ---
 
@@ -102,6 +146,8 @@ classDiagram
     : 채팅방 소유자 (users.user_id FK).
 -   **title** *(string, public)*
     : 채팅방 제목.
+-   **stock_code** *(string, public)*
+    : 종목 코드 (Optional, 종목 채팅방일 경우 사용).
 -   **created_at** *(datetime, public)*
     : 채팅방 생성 시각.
 -   **lastchat_at** *(datetime, public)*
@@ -138,6 +184,8 @@ classDiagram
 ### Attributes
 -   **category_id** *(int, public)*
     : 카테고리 PK.
+-   **user_id** *(int, public)*
+    : 카테고리 소유자 (users.user_id FK).
 -   **title** *(string, public)*
     : 카테고리 이름.
 -   **created_at** *(datetime, public)*
@@ -165,29 +213,22 @@ classDiagram
 
 ### 1.6 stocks
 **Class Description**
-: 주식 종목의 기본 정보, 현재가, 밸류에이션 등 요약 정보를 저장합니다.
+: 주식 종목의 기본 정보, 시장 데이터, 밸류에이션, 재무 건전성, 주가 변동성, 배당 정보, 애널리스트 의견 등을 저장합니다.
 
 ### Attributes
--   **code** *(string, public)*
-    : 종목 코드 (PK).
--   **company_name** *(string, public)*
-    : 회사명.
--   **sector** *(string, public)*
-    : 섹터.
--   **business_summary** *(text, public)*
-    : 비즈니스 요약.
--   **current_price** *(numeric, public)*
-    : 현재 주가.
--   **market_cap** *(bigint, public)*
-    : 시가 총액.
--   **pe_ratio** *(numeric, public)*
-    : 주가수익비율 (TTM).
--   **dividend_yield** *(numeric, public)*
-    : 배당 수익률.
--   **recommendation** *(string, public)*
-    : 애널리스트 투자의견.
--   **last_updated** *(datetime, public)*
-    : 정보 마지막 갱신 시각.
+-   **code** *(string, public)*: 종목 코드 (PK).
+-   **company_name** *(string, public)*: 회사명.
+-   **sector** *(string, public)*: 섹터.
+-   **industry** *(string, public)*: 산업.
+-   **country** *(string, public)*: 국가.
+-   **business_summary** *(text, public)*: 비즈니스 요약.
+-   **current_price** *(numeric, public)*: 현재 주가.
+-   **market_cap** *(bigint, public)*: 시가 총액.
+-   **pe_ratio** *(numeric, public)*: 주가수익비율.
+-   **dividend_yield** *(numeric, public)*: 배당 수익률.
+-   **recommendation** *(string, public)*: 애널리스트 투자의견.
+-   **last_updated** *(datetime, public)*: 정보 마지막 갱신 시각.
+-   *(기타 모델에 정의된 상세 필드 포함)*
 
 ---
 
@@ -196,26 +237,49 @@ classDiagram
 : 개별 주식(`stocks`)의 분기별/연간 재무제표 데이터를 저장합니다.
 
 ### Attributes
--   **id** *(bigint, public)*
-    : 재무제표 데이터 PK.
--   **stock_code** *(string, public)*
-    : 대상 종목 코드 (stocks.code FK).
--   **report_period** *(date, public)*
-    : 보고서 기준일 (결산일).
--   **report_type** *(ReportTypeEnum, public)*
-    : 보고서 유형 (Annual/Quarterly).
--   **revenue** *(bigint, public)*
-    : 매출액.
--   **net_income** *(bigint, public)*
-    : 당기순이익.
--   **total_assets** *(bigint, public)*
-    : 자산 총계.
--   **total_liabilities** *(bigint, public)*
-    : 부채 총계.
--   **operating_cash_flow** *(bigint, public)*
-    : 영업 활동 현금 흐름.
--   **created_at** *(datetime, public)*
-    : 데이터 생성 시각.
+-   **id** *(bigint, public)*: 재무제표 데이터 PK.
+-   **stock_code** *(string, public)*: 대상 종목 코드 (stocks.code FK).
+-   **report_period** *(date, public)*: 보고서 기준일 (결산일).
+-   **report_type** *(ReportTypeEnum, public)*: 보고서 유형 (Annual/Quarterly).
+-   **revenue** *(bigint, public)*: 매출액.
+-   **gross_profit** *(bigint, public)*: 매출총이익.
+-   **operating_income** *(bigint, public)*: 영업이익.
+-   **net_income** *(bigint, public)*: 당기순이익.
+-   **total_assets** *(bigint, public)*: 자산 총계.
+-   **total_liabilities** *(bigint, public)*: 부채 총계.
+-   **total_equity** *(bigint, public)*: 자본 총계.
+-   **operating_cash_flow** *(bigint, public)*: 영업 활동 현금 흐름.
+-   **free_cash_flow** *(bigint, public)*: 잉여 현금 흐름.
+-   **created_at** *(datetime, public)*: 데이터 생성 시각.
+
+---
+
+### 1.8 comments
+**Class Description**
+: 사용자가 종목에 대해 작성한 코멘트/토론글을 저장합니다.
+
+### Attributes
+-   **comment_id** *(int, public)*: 코멘트 PK.
+-   **user_id** *(int, public)*: 작성자 ID (FK).
+-   **stock_code** *(string, public)*: 종목 코드 (FK).
+-   **content** *(text, public)*: 내용.
+-   **created_at** *(datetime, public)*: 작성 시각.
+
+---
+
+### 1.9 news_articles
+**Class Description**
+: 수집된 뉴스 및 공시 기사를 저장합니다.
+
+### Attributes
+-   **article_id** *(int, public)*: 기사 PK.
+-   **category** *(string, public)*: 카테고리.
+-   **title** *(text, public)*: 제목.
+-   **content** *(text, public)*: 본문.
+-   **url** *(text, public)*: 원문 URL.
+-   **source** *(string, public)*: 출처.
+-   **published_at_text** *(string, public)*: 게시 시각(텍스트).
+-   **created_at** *(datetime, public)*: 수집 시각.
 
 ---
 
@@ -329,14 +393,17 @@ classDiagram
     %% --- Chat & Message Schemas ---
     class ChatCreate {
         +str title
+        +Optional[str] stock_code
     }
     class ChatUpdate {
         +Optional[str] title
         +Optional[str] trash_can
+        +Optional[str] stock_code
     }
     class ChatRead {
         +int chat_id
         +str title
+        +Optional[str] stock_code
         +datetime created_at
         +Optional[datetime] lastchat_at
         +str trash_can
@@ -359,6 +426,7 @@ classDiagram
         +int user_id
         +int chat_id
         +str role
+        +Optional[list] referenced_news
         +datetime created_at
     }
     class MessageList {
@@ -372,24 +440,21 @@ classDiagram
 
     %% --- Category Schemas ---
     class CategoryBase {
-        +str title
-        +str description
+        %% Removed description as it is not in code
     }
     class CategoryCreate {
+        +str title
     }
-    CategoryCreate --|> CategoryBase
     class CategoryUpdate {
         +Optional[str] title
-        +Optional[str] description
     }
-    class CategoryInDB {
+    class Category {
         +int category_id
+        +int user_id
+        +str title
+        +Optional[int] item_count
         +datetime created_at
     }
-    CategoryInDB --|> CategoryBase
-    class Category {
-    }
-    Category --|> CategoryInDB
     class CategoryList {
         +list[Category] categories
         +int total
@@ -410,6 +475,7 @@ classDiagram
         +int messages_id
         +Optional[int] category_id
         +datetime created_at
+        +Optional[Message] message
     }
     class BookmarkList {
         +list[BookmarkRead] bookmarks
@@ -419,13 +485,6 @@ classDiagram
         +int total_pages
     }
     BookmarkList *-- "many" BookmarkRead : bookmarks
-
-    %% --- Relationships based on IDs ---
-    User "1" -- "many" MessageRead : "writes"
-    User "1" -- "many" BookmarkRead : "has"
-    ChatRead "1" -- "many" MessageRead : "contains"
-    MessageRead "1" -- "many" BookmarkRead : "is bookmarked by"
-    Category "1" -- "many" BookmarkRead : "categorizes"
 ```
 ---
 
@@ -518,6 +577,7 @@ classDiagram
 
 **Attributes**
 * **title** *(str)*: 채팅방 제목 (min 1, max 100).
+* **stock_code** *(Optional[str])*: 종목 코드.
 
 ---
 
@@ -527,6 +587,7 @@ classDiagram
 **Attributes**
 * **title** *(Optional[str])*: 새 채팅방 제목 (min 1, max 100).
 * **trash_can** *(Optional[str])*: 휴지통 상태 (in 또는 out).
+* **stock_code** *(Optional[str])*: 종목 코드.
 
 ---
 
@@ -536,6 +597,7 @@ classDiagram
 **Attributes**
 * **chat_id** *(int)*: 채팅방 고유 ID.
 * **title** *(str)*: 채팅방 제목.
+* **stock_code** *(Optional[str])*: 종목 코드.
 * **created_at** *(datetime)*: 생성 시각.
 * **lastchat_at** *(Optional[datetime])*: 마지막 대화 시각.
 * **trash_can** *(str)*: 휴지통 상태.
@@ -571,6 +633,7 @@ classDiagram
 * **user_id** *(int)*: 작성한 사용자 ID.
 * **chat_id** *(int)*: 메시지가 속한 채팅방 ID.
 * **role** *(str)*: 메시지 주체 (user 또는 assistant).
+* **referenced_news** *(Optional[list])* : 참조된 뉴스/공시 정보.
 * **created_at** *(datetime)*: 생성 시각.
 
 ---
@@ -587,51 +650,35 @@ classDiagram
 
 ---
 
-### 3.17 CategoryBase
-**Class Description** : 카테고리 공통 속성을 위한 기본 스키마입니다.
+### 3.17 CategoryCreate
+**Class Description** : 카테고리 생성을 위한 요청 스키마입니다.
 
 **Attributes**
 * **title** *(str)*: 카테고리 제목 (max 50).
-* **description** *(str)*: 카테고리 설명 (max 200).
 
 ---
 
-### 3.18 CategoryCreate
-**Class Description** : 카테고리 생성을 위한 요청 스키마입니다. (CategoryBase 상속)
-
-**Attributes**
-* *(Inherited)* **title**, **description**
-
----
-
-### 3.19 CategoryUpdate
+### 3.18 CategoryUpdate
 **Class Description** : 카테고리 수정을 위한 요청 스키마입니다.
 
 **Attributes**
 * **title** *(Optional[str])*: 카테고리 제목 (max 50).
-* **description** *(Optional[str])*: 카테고리 설명 (max 200).
 
 ---
 
-### 3.20 CategoryInDB
-**Class Description** : 데이터베이스의 카테고리 스키마입니다. (CategoryBase 상속)
+### 3.19 Category
+**Class Description** : 클라이언트에 카테고리 정보를 반환하기 위한 응답 스키마입니다.
 
 **Attributes**
-* *(Inherited)* **title**, **description**
 * **category_id** *(int)*: 카테고리 고유 ID.
+* **user_id** *(int)*: 사용자 ID.
+* **title** *(str)*: 카테고리 제목.
+* **item_count** *(Optional[int])*: 포함된 북마크 수.
 * **created_at** *(datetime)*: 생성 시각.
 
 ---
 
-### 3.21 Category
-**Class Description** : 클라이언트에 카테고리 정보를 반환하기 위한 응답 스키마입니다. (CategoryInDB 상속)
-
-**Attributes**
-* *(Inherited)* **category_id**, **created_at**, **title**, **description**
-
----
-
-### 3.22 CategoryList
+### 3.20 CategoryList
 **Class Description** : 카테고리 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
@@ -643,7 +690,7 @@ classDiagram
 
 ---
 
-### 3.23 BookmarkCreate
+### 3.21 BookmarkCreate
 **Class Description** : 북마크(메시지 저장) 생성을 위한 요청 스키마입니다.
 
 **Attributes**
@@ -652,7 +699,7 @@ classDiagram
 
 ---
 
-### 3.24 BookmarkRead
+### 3.22 BookmarkRead
 **Class Description** : 북마크 조회를 위한 응답 스키마입니다.
 
 **Attributes**
@@ -661,10 +708,11 @@ classDiagram
 * **messages_id** *(int)*: 저장된 메시지 ID.
 * **category_id** *(Optional[int])*: 연결된 카테고리 ID.
 * **created_at** *(datetime)*: 생성 시각.
+* **message** *(Optional[Message])*: 저장된 메시지 정보.
 
 ---
 
-### 3.25 BookmarkList
+### 3.23 BookmarkList
 **Class Description** : 북마크 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
@@ -835,7 +883,7 @@ classDiagram
 - **get_messages** *(room_id, last_message_id, db, user → List[MessageRead], public)*
   : 채팅방의 메시지 이력을 조회합니다.
 - **get_chat_rooms** *(db, user → List[ChatRead], public)*
-  : 사용자의 채팅방 목록을 반환합니다.
+  : 사용자가 채팅방 목록을 반환합니다.
 - **enter_chat_by_stock** *(stock_code, title, db, user → ChatByStockResponse, public)*
   : 종목 코드를 기반으로 채팅방을 생성하거나 조회(Upsert)합니다.
 - **update_chat_room** *(room_id, chat_in, db, user → ChatRead, public)*

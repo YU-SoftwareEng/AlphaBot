@@ -1,89 +1,71 @@
 ```mermaid
 stateDiagram-v2
-[*] --> Init
+    [*] --> Init
 
-state Init {
-  [*] --> Landing
-  Landing --> Login : to_login
-  Landing --> Register : to_register
-}
-Init --> Login
-Init --> Register
-
-Login --> Main : auth_ok
-Login --> Login : auth_fail
-Register --> Login : signup_done
-
-Main --> Logout : logout
-Logout --> Login : session_cleared
-
-state Main {
-  [*] --> Chat
-  Chat --> Stock : search
-  Chat --> Categories
-  Chat --> Trash
-
-  Chat --> News
-  Chat --> Profile
-
-  state Chat {
-    [*] --> ChatIdle
-    ChatIdle --> ChatTyping : type
-    ChatTyping --> ChatIdle : send
-    ChatIdle --> DeleteDlg : delete
-    DeleteDlg --> ChatIdle : done
-  }
-
-  state Stock {
-    [*] --> SearchInput
-    SearchInput --> NoResult : none
-    SearchInput --> Detail : ok
-    NoResult --> SearchInput
-
-    state Detail {
-      [*] --> Summary
-      Summary --> Financials : to_fin
-      Financials --> Summary : back
-      Financials --> Financials : toggle
-      Summary --> Comments : to_comments
-
+    state Init {
+        [*] --> WelcomePage
+        WelcomePage --> Login : click_login
+        WelcomePage --> Signup : click_signup
+        Signup --> Login : signup_success
+        Login --> [*] : login_success
     }
-  }
 
-  state Categories {
-    [*] --> CatList
-    CatList --> CatCreate : new
-    CatList --> CatEdit : rename
-    CatList --> CatDelete : delete
-    CatDelete --> CatList : confirm
-    CatList --> BookmarkList : open
-    BookmarkList --> Chat : focus_chat
-  }
+    Init --> Main : session_ok
 
-  state Trash {
-    [*] --> TrashList
-    TrashList --> Chat : restore
-    TrashList --> TrashList : purge
-  }
+    state Main {
+        [*] --> Chat
 
+        state Chat {
+            [*] --> ChatIdle
+            ChatIdle --> ChatActive : select_room
+            ChatActive --> ChatIdle : clear_selection
+        }
 
+        state Discussion {
+            [*] --> DiscussionList
+            DiscussionList --> DiscussionDetail : select_stock
+            DiscussionDetail --> DiscussionList : back
+        }
 
-  state News {
-    [*] --> NewsFeed
-    NewsFeed --> NewsFeed : toggle_summary
-    NewsFeed --> EmptyNews : empty
-    EmptyNews --> NewsFeed
-  }
+        state Bookmarks {
+            [*] --> BookmarkList
+            BookmarkList --> BookmarkCategory : filter
+        }
 
-  state Profile {
-    [*] --> MyProfile
-    MyProfile --> EditProfile : edit
-    EditProfile --> MyProfile : save
-    MyProfile --> Settings : settings
-    Settings --> MyProfile : apply
-    MyProfile --> Logout : logout
-  }
-}
+        state Trash {
+            [*] --> TrashList
+            TrashList --> Chat : restore
+        }
+
+        state CategoryAdmin {
+            [*] --> CategoryList
+            CategoryList --> CategoryCreate : add
+            CategoryList --> CategoryEdit : edit
+        }
+
+        state MyPage {
+            [*] --> Profile
+            Profile --> Password : tab_switch
+            Password --> Profile : tab_switch
+            Profile --> ProfileEdit : edit_mode
+            ProfileEdit --> Profile : save/cancel
+        }
+        
+        %% Global Transitions
+        Chat --> Discussion : nav_discussion
+        Chat --> Bookmarks : nav_bookmarks
+        Chat --> Trash : nav_trash
+        Chat --> CategoryAdmin : nav_admin_cat
+        Chat --> MyPage : nav_mypage
+        
+        Discussion --> Chat : back_to_chat
+        Bookmarks --> Chat : back_to_chat
+        Trash --> Chat : back_to_chat
+        CategoryAdmin --> Chat : back_to_chat
+        MyPage --> Chat : back_to_chat
+    }
+
+    Main --> Init : logout
 ```
 
 # 5. State Machine Diagram
@@ -91,50 +73,45 @@ state Main {
 ## 5.1 어플리케이션 SMD(전면)
 
 ### 5.1.1 모델링 원칙
-- **화면=State 1:1 매핑**: `Chat`, `Stock`, `Categories`, `Trash`, `News`, `Profile` 등은 **복합(Composite) 상태**로 정의하고, 각 내부에 하위 화면/탭을 **서브 상태**로 둔다.
-- **이벤트=전이(Transition)**: 사용자 액션(버튼/탭/검색/뒤로가기) 또는 시스템 이벤트(인증 성공/세션 파기)로 상태 전이가 발생한다.
-- **종료 규칙**: 편집/상세 등 **하위 상태가 정상 종료**되면 **직전 상위 상태**로 복귀한다(예: `PEditor → PList`, `DetailPanel.Summary → SearchInput`).
+- **화면=State 매핑**: `App.tsx`의 라우트 정의를 기준으로 상태를 구분했습니다.
+- **주요 상태**:
+    - **Init**: 시작 화면 (`WelcomePage`), 로그인 (`LoginPage`), 회원가입 (`SignupPage`)
+    - **Main**: 로그인 후 진입하는 주요 기능 영역 (`ChatPage` 중심)
 
-### 5.1.2 주요 전면 상태 설명(요약)
-- **Init**: 초기 진입 영역. `Landing`에서 `Login`/`Register`로 분기.
-- **Login/Register**: 인증 플로우. 성공 시 `Main`으로, 실패 시 자기 상태 유지.
-- **Main(Composite)**: 앱의 주요 내비게이션 허브.
-  - **Chat**: `ChatIdle ↔ ChatTyping`, 삭제 다이얼로그로의 단발성 분기 후 복귀.
-  - **Stock**: `SearchInput → (NoResult | DetailPanel)`; `DetailPanel`은 `Summary`, `Financials`(분기/연간 토글), `Comments`로 구성.
-  - **Categories/Trash**: 목록 중심. 생성/수정/삭제/복원 등의 단순 전이.
+### 5.1.2 주요 전면 상태 설명
+- **Init**:
+    - 앱 실행 시 `WelcomePage`가 표시됩니다.
+    - 사용자는 `Login` 또는 `Signup`으로 이동할 수 있습니다.
+    - 인증에 성공하면 `Main` 상태로 전이합니다.
 
-  - **News**: 피드 기반. 결과 없을 때 `EmptyNews`로 분기 후 재시도 시 피드 복귀.
-  - **Profile**: 프로필/설정/통계/로그아웃의 허브.
+- **Main (Composite)**:
+    - **Chat (ChatPage)**: 애플리케이션의 홈 화면입니다. 좌측 사이드바를 통해 채팅방을 선택하거나 생성합니다.
+    - **Discussion (StockDiscussionPage)**: 종목 토론 페이지입니다. 특정 종목에 대한 사용자들의 댓글을 확인하고 작성할 수 있습니다.
+    - **Bookmarks (BookmarkPage)**: 저장된 메시지들을 확인하는 페이지입니다.
+    - **Trash (TrashPage)**: 삭제된 채팅방을 복구하거나 영구 삭제하는 페이지입니다.
+    - **CategoryAdmin (CategoryAdminPage)**: 북마크 카테고리를 관리하는 별도 페이지입니다.
+    - **MyPage (MyPage)**: 사용자 프로필 수정 및 비밀번호 변경 기능을 제공하는 탭 구조의 페이지입니다.
 
 ### 5.1.3 내비게이션 규칙
-- **허용 전이**: 메인 내비게이션(탭/사이드바/라우터)에서 **상호 간 이동 허용**. 다이얼로그/편집 상태는 **진입–종료–복귀** 3단 고정 패턴.
-- **뒤로가기**: 현재 서브 상태가 있으면 **상위 상태로 Pop**, 최상위면 이전 화면으로 이동. 인증 파기 시에는 `Logout → Login`으로 강제 이동.
+- **사이드바/메뉴 이동**: `Chat` 화면에서 사이드바 또는 상단 메뉴를 통해 `Discussion`, `Bookmarks`, `Trash`, `MyPage` 등으로 이동할 수 있습니다.
+- **뒤로가기**: 각 기능 페이지에서 작업 후 다시 `Chat` 화면으로 복귀할 수 있습니다.
+- **로그아웃**: 어떤 상태에서든 로그아웃 시 세션이 종료되고 `Init` (`WelcomePage` 또는 `Login`) 상태로 돌아갑니다.
 
 ---
 
 ## 5.2 네트워크/세션 SMD(배경)
 
 ### 5.2.1 목적
-UI에 보이지 않는 **요청–응답–재시도–오류 표면화**를 표준화한다. 전면 SMD는 “요청을 요구하는 이벤트”만 유발하고, **배경 SMD가 성공 조건을 충족**했을 때에만 결과가 전면 SMD에 반영된다.
+UI 동작 뒤에서 일어나는 비동기 데이터 처리 흐름을 정의합니다.
 
-### 5.2.2 공통 패턴
-1. **Idle → Fetching**: 검색/재무/뉴스/알림/댓글/프로필/옵션 등 API 트리거 발생 시.
-2. **Fetching → Success/Failure**: 서버 응답 수신. 성공이면 데이터 유효성 검증 포함.
-3. **Success → ApplyUI → Idle**: 스토어/뷰모델 갱신 후 UI에 반영.
-4. **Failure → RetryDecision**: 재시도 가능/잔여 횟수/백오프 정책 판단.
-   - 가능: **Fetching**으로 재진입
-   - 불가: **SurfaceError**로 전파(토스트/모달/에러 뷰), 이후 **Idle**
-5. **SessionTimeout → ForceLogout**: 무활동 타임아웃 또는 토큰 만료 시 세션 파기 후 `Login`으로 유도.
-
-### 5.2.3 오류 등급(권장)
-- **User-fixable**: 입력 오류, 권한 부족 → 명확한 가이드 메시지 표면화.
-- **Transient**: 네트워크 단절, 타임아웃 → 지수 백오프 재시도.
-- **Fatal**: 스키마/버전 불일치 → 필수 업데이트 유도 또는 제한 모드 진입.
+### 5.2.2 공통 API 패턴
+1. **Request**: UI 이벤트(버튼 클릭, 페이지 로드) 시 API 요청 발생 (Fetching).
+2. **Pending**: 데이터 로딩 중 (Spinner/Loading Skeleton 표시).
+3. **Success**: 응답 성공 시 UI 업데이트 (List 갱신, Detail 표시 등).
+4. **Error**: 실패 시 에러 메시지 표시 (Alert 또는 Toast).
 
 ---
 
 ## 5.3 다이어그램 간 일관성
-
-- **Use Case/Sequence/Class/SMD/UI 명명 통일**: 기능명·엔티티명·액션 라벨을 통일한다.
-- **트리거 근거화**: SMD의 전이는 **시퀀스 다이어그램의 메시지**에서 기원한다(예: `SearchInput`에서 “검색 전송” → 배경 SMD `Fetching`).
-- **상태 최소화**: 화면 단위가 아닌 **상태 의미 변화가 있는 지점**만 상태로 올린다(뷰 내부 스크롤, 필터 드롭다운 열림 등은 이벤트로만 처리).
+- 본 다이어그램은 `App.tsx`의 라우팅 구조와 일치합니다.
+- `Chat` 상태 내부의 동작은 Class Diagram의 `ChatService` 및 Sequence Diagram의 메시지 전송 로직과 연결됩니다.

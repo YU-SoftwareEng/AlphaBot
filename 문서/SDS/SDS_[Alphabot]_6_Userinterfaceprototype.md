@@ -1,98 +1,105 @@
-![welcomepage](./Image_Userinterfaceprototype/welcomepage.png)
-### [그림 1] 시작 화면
+# 6. User Interface Prototype
 
-위 그림은 사용자가 애플리케이션에 처음 진입했을 때 마주하는 시작 화면입니다. 화면 중앙에는 서비스를 상징하는 α 로고가 표시되어 사용자들이 알파 수익을 얻어낼 수 있도록 돕겠다는 의미를 담았습니다. 사용자는 하단의 '로그인' 버튼을 통해 기존 계정으로 서비스를 이용하거나, '회원가입' 버튼을 눌러 새로운 계정을 생성하는 화면으로 이동할 수 있습니다. 이 시작화면에서 반드시 로그인을 해야만 서비스 화면으로 이동할 수 있습니다.
+## 6.1 화면 흐름도 (Screen Flow)
 
----
-![login](./Image_Userinterfaceprototype/login.png)
-### [그림 2] 로그인 화면
+```mermaid
+graph TD
+    Start((Run App)) --> Welcome[Startup Screen]
+    Welcome -->|Login| Login[Login Screen]
+    Welcome -->|Signup| Signup[Signup Screen]
+    
+    Login -->|Success| Chat[Main Chat Screen]
+    Signup -->|Success| Login
+    
+    Chat -->|Left Sidebar| NewChat[Create Chat / Search Stock]
+    Chat -->|Left Sidebar| ChatList[Chat History List]
+    
+    Chat -->|Right Sidebar| RightMenu[Global Navigation Menu]
+    RightMenu -->|Navigate| MyPage[My Page]
+    RightMenu -->|Navigate| Bookmarks[Saved Messages]
+    RightMenu -->|Navigate| Trash[Trash Bin]
+    RightMenu -->|Navigate| Categories[Category Admin]
+    RightMenu -->|Navigate| Discussion[Stock Discussion]
+    
+    MyPage -->|Tab| Profile[Profile Edit]
+    MyPage -->|Tab| Password[Password Change]
+```
 
-위 그림은 로그인 화면입니다. 사용자는 가입 시 등록했던 아이디와 비밀번호를 각 입력창에 입력한 후, 하단의 '로그인' 버튼을 눌러 서비스에 접속할 수 있습니다.
+## 6.2 화면 상세 (UI Screens)
 
----
-![signin](./Image_Userinterfaceprototype/signin.png)
-### [그림 3] 회원가입 화면
+### 6.2.1 Startup Screen (WelcomePage)
+- **Description**: 애플리케이션 접속 시 최초로 보여지는 화면입니다.
+- **Components**:
+    - **Logo**: 중앙에 위치한 서비스 로고 (AlphaBot).
+    - **Login Button**: 로그인 페이지로 이동합니다.
+    - **Signup Button**: 회원가입 페이지로 이동합니다.
 
-위 그림은 회원가입 화면입니다. 새로운 사용자는 아이디, 이름, 비밀번호, 비밀번호 확인까지 총 4개의 필수 정보를 입력해야 합니다. 모든 정보를 올바르게 입력한 후 '가입하기' 버튼을 누르면 계정 생성이 완료됩니다. 만약 이미 계정을 보유한 사용자일 경우, 하단의 '로그인' 링크를 통해 로그인 화면으로 즉시 이동할 수 있습니다.
+### 6.2.2 Login Screen
+- **Description**: 기존 사용자가 로그인하는 화면입니다.
+- **Components**:
+    - **ID Input**: 사용자 아이디 입력 필드.
+    - **Password Input**: 비밀번호 입력 필드.
+    - **Submit Button**: 로그인 요청을 전송합니다.
+    - **Link**: 회원가입 화면으로 이동하는 링크를 제공합니다.
 
----
-![edit_profile](./Image_Userinterfaceprototype/edit_profile.png)
-### [그림 4] 마이페이지 - 프로필 수정 화면
+### 6.2.3 Signup Screen
+- **Description**: 신규 사용자가 계정을 생성하는 화면입니다.
+- **Components**:
+    - **ID Input**: 희망 아이디.
+    - **Password Input**: 비밀번호 (유효성 검사 포함).
+    - **Name Input**: 사용자 별명/이름.
+    - **Submit Button**: 계정 생성을 요청합니다.
 
-위 그림은 마이페이지의 프로필 수정 화면입니다. 이 화면에서는 사용자의 프로필 정보를 확인하고 수정할 수 있습니다. 아이디는 고유 값이므로 변경이 불가능하도록 비활성화되어 있습니다. 사용자는 '이름'을 수정한 후 '수정하기' 버튼을 눌러 변경사항을 저장할 수 있습니다.
+### 6.2.4 Main Chat Screen (ChatPage)
+- **Description**: 핵심 기능인 AI 주식 채팅이 이루어지는 메인 화면입니다.
+- **Layout**:
+    - **Left Sidebar**: 채팅방 목록 및 새 채팅 생성.
+    - **Center (ChatArea)**: 대화 내용 표시 및 메시지 입력.
+    - **Right Sidebar (RightMenu)**: 주요 기능 내비게이션 메뉴.
 
----
-![edit_pw](./Image_Userinterfaceprototype/edit_pw.png)
-### [그림 5] 마이페이지 - 비밀번호 변경 화면
+#### 6.2.4.1 Left Sidebar (Chat List & Creation)
+- **New Chat Form**:
+    - **Stock Code Input**: 관심 있는 종목 코드 입력 (예: AAPL).
+    - **Title Input**: 채팅방 제목 설정 (선택 사항).
+    - **Create Button**: 입력한 종목으로 새 채팅방을 생성하고 즉시 입장합니다.
+- **Chat History List**:
+    - 과거 생성한 채팅방 목록을 최신순으로 표시합니다.
+    - 각 항목 클릭 시 해당 채팅방으로 화면이 전환됩니다.
+    - 항목 우측의 '수정' 버튼으로 제목을 변경하거나 '삭제' 버튼으로 휴지통으로 이동시킬 수 있습니다.
 
-위 그림은 마이페이지 내 비밀번호 변경 화면입니다. 계정 보안을 위해 사용자는 먼저 '현재 비밀번호'를 입력하여 본인 인증을 거칩니다. 이후 '새 비밀번호'와 '새 비밀번호 확인'을 순서대로 입력하고 '변경하기' 버튼을 누르면 계정의 비밀번호가 안전하게 변경됩니다. 새 비밀번호와 새 비밀번호 확인이 일치하지 않으면 불일치 메세지가 출력됩니다.
+#### 6.2.4.2 Center Area (Chat Interface)
+- **Message List**:
+    - **User Message**: 우측 정렬된 말풍선.
+    - **AI Response**: 좌측 정렬된 말풍선. (Markdown 형식 지원).
+- **Input Area**:
+    - **Text Field**: 질문을 입력하는 공간입니다.
+    - **Send Button**: 메시지를 전송합니다. (Enter 키 지원).
+- **Welcome State**: 선택된 종목이 없을 때, 서비스 사용법을 안내하는 웰컴 메시지를 표시합니다.
 
+#### 6.2.4.3 Right Sidebar (Global Navigation)
+- **Feature Buttons**:
+    - **Category**: 북마크 카테고리 관리 페이지(`CategoryAdmin`)로 이동.
+    - **Trash**: 휴지통 페이지(`TrashPage`)로 이동.
+    - **Saved Messages**: 저장된 메시지 목록(`BookmarkPage`)으로 이동.
+    - **Stock Discussion**: 종목 토론방(`StockDiscussionPage`)으로 이동. 현재 선택된 종목이 있다면 해당 종목의 토론방으로 직행합니다.
+    - **Logout**: 사용자 세션을 종료하고 로그인 화면으로 돌아갑니다.
 
----
-![사이드바](./Image_Userinterfaceprototype/사이드바.png)
-### [그림 6] 사이드바 초기 화면
+### 6.2.5 Sub Pages
 
-오른쪽 사이드 바의 버튼 6개는 각각 카테고리, 종목 검색, 휴지통, 마이페이지, 저장된 메시지, 로그아웃을 할 수 있는 버튼이다.
+#### 6.2.5.1 My Page
+- **Profile Tab**: 사용자 이름 수정 기능.
+- **Password Tab**: 현재 비밀번호 확인 후 새 비밀번호로 변경 기능.
 
----
-![휴지통](./Image_Userinterfaceprototype/휴지통.png)
-### [그림 7] 휴지통 화면
+#### 6.2.5.2 Bookmarks (Saved Messages)
+- **Filter**: 카테고리별로 저장된 메시지를 필터링하여 봅니다.
+- **List**: 저장한 메시지의 요약 내용을 리스트로 표시합니다.
 
-오른쪽 사이드 바의 휴지통 버튼을 누르면 이동하는 화면이다. 전체 선택의 왼쪽 체크박스를 클릭하여 휴지통에 있는 항목 전체를 선택할 수 있다. 또는 각 항목 왼쪽 위에 위치한 체크박스를 클릭하여 개별 선택을 할 수 있다. 항목이 하나 이상 선택되어 있는 경우 선택 복원, 선택 삭제를 실행할 수 있다. 선택 복원을 누르면 선택된 항목은 채팅으로 다시 복원되고 휴지통 목록에서는 사라지게 된다. 선택 삭제를 누르면 선택된 항목을 휴지통에서 완전히 삭제되어 휴지통 목록에서 삭제되고 더 이상 복원할 수 없다. 각 항목 별로 오른쪽 아래에 위치한 복원 버튼과 영구 삭제 버튼도 해당 항목에 대하여 각각 같은 기능을 한다. 휴지통 비우기를 누르면 전체 항목이 휴지통에서 삭제된다. 각 버튼은 해당 기능을 실행하기 전 확인 메시지를 띄운다. 확인 또는 취소 버튼을 클릭하여 기능을 계속 진행하거나 중단할 수 있다.
+#### 6.2.5.3 Trash Bin
+- **List**: 삭제한 채팅방 목록을 표시합니다.
+- **Restore**: 삭제된 채팅방을 다시 활성 목록으로 복구합니다.
+- **Permanent Delete**: 채팅방을 영구적으로 삭제합니다.
 
----
-![빈휴지통](./Image_Userinterfaceprototype/빈휴지통.png)
-### [그림 8] 빈 휴지통 화면
-
-휴지통에 항목이 없을때 표시되는 화면이다.
-
----
-![저장된메시지](./Image_Userinterfaceprototype/저장된메시지.png)
-### [그림 9] 저장된 메시지 화면
-
-저장된 메시지는 카테고리 별로 나누어 저장된다. 기본화면은 전체 카테고리이고, 왼쪽 폴더를 클릭하여 카테고리를 변경할 수 있다. 각 메시지는 오른쪽 위 쓰레기통 버튼을 눌러 삭제할 수 있다. 
-
----
-![카테고리추가](./Image_Userinterfaceprototype/카테고리추가.png)
-### [그림 10] 카테고리 추가 화면
-
-왼쪽 아래 새 카테고리 버튼을 눌러 카테고리를 추가할 수 있다. 카테고리의 이름을 입력하고 추가를 누르면 카테고리가 추가된다. 
-
----
-![사이드바 메뉴 초기](./Image_Userinterfaceprototype/sidebar-1.png)
-### [그림 11] 우측 사이드바 초기 화면
-
-우측 사이드바의 초기 상태에는 [종목 검색] 버튼이 표시되어 있음.
-
-또한, 북마크한 메세지를 카테고리 별로 모아놓은 카테고리 버튼과 북마크한 메세지를 삭제하기 위해 모아놓은 휴지통 버튼, 그리고 자신의 개인정보를 수정할 수 있는 페이지로 이동가능한 마이페이지 버튼, 북마크한 메세지를 볼 수 있는 저장된 메세지 버튼, 마지막으로 로그아웃 버튼이 있음.
-
----
-![사이드바 메뉴 종목 검색 클릭 후 검색기록 조회](./Image_Userinterfaceprototype/sidebar-2.png)
-### [그림 12] 우측 사이드바 메뉴 종목 검색 클릭
-
-사용자가 초기 화면의 [종목 검색] 버튼을 클릭함.
-
-버튼이 [검색 닫기]로 변경되며, 그 아래에 검색바가 나타남.
-
-이어서 사용자가 [종목명 또는 티커를 검색]이라고 표시된 검색바를 클릭하면,
-
-'최근 검색' 목록(예: AAPL, MSFT, GOOGL)이 검색바 아래에 표시됨.
-
-[검색 닫기]를 다시 클릭하면 원래 초기 화면으로 돌아감.
-
----
-![사이드바 메뉴 초기](./Image_Userinterfaceprototype/sidebar-1.png)
-### [그림 14] 좌측 사이드바 초기 화면
-
-새 채팅 생성: 상단의 파란색 [+ 새 채팅] 버튼을 누르면, 현재 대화 내용이 저장되고 새로운 채팅 세션을 시작할 수 있음.
-
-채팅 목록: [+ 새 채팅] 버튼 아래에는 사용자가 이전에 나눴던 대화의 목록이 시간순으로 표시 됨. 각 항목은 채팅의 제목과 마지막 채팅 날짜(예: 2024.9.11, 2024.9.10)를 보여주며, 클릭 시 해당 대화 내용을 다시 불러올 수 있음.
-
-
----
-
-### 로그인 후 메인화면
-
-![로그인 후 메인화면](./Image_Userinterfaceprototype/afterlogin_main.png)  
-
-로그인 후 진입하는 메인 화면으로, 주식 정보를 제공하는 'Alpha Bot'과의 채팅 인터페이스를 보여준다. 좌측 사이드바에는 기존 채팅 기록이 목록으로 표시되며, 상단의 '+ 새 채팅' 버튼을 누르면 새로운 대화를 시작할 수 있다. 중앙의 메인 채팅창에는 봇의 환영 메시지와 사용자가 주고받은 대화 내용의 예시가 표시된다. 사용자가 하단의 입력란에 텍스트 형식으로 질문을 입력하고 전송 버튼을 누르면, 봇이 관련 주식 정보를 분석하여 답변을 제공한다. 우측 사이드바에는 '카테고리', '종목 검색', '휴지통', '마이페이지', '저장된 메시지', '로그아웃' 기능으로 이동할 수 있는 버튼들이 위치한다.
+#### 6.2.5.4 Stock Discussion
+- **Stock Selector**: 토론할 종목을 선택하거나 검색합니다.
+- **Comment List**: 해당 종목에 대한 다른 사용자들의 코멘트를 최신순으로 확인합니다.
+- **Input**: 자신의 의견을 작성하여 등록합니다.
