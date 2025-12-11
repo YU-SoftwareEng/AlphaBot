@@ -94,25 +94,7 @@ classDiagram
         +int number_of_analyst_opinions
         +datetime last_updated
     }
-    class financial_statements {
-        +bigint id
-        +string stock_code
-        +date report_period
-        +ReportTypeEnum report_type
-        +bigint revenue
-        +bigint gross_profit
-        +bigint operating_income
-        +bigint ebitda
-        +bigint net_income
-        +bigint total_assets
-        +bigint total_liabilities
-        +bigint total_equity
-        +bigint operating_cash_flow
-        +bigint investing_cash_flow
-        +bigint financing_cash_flow
-        +bigint free_cash_flow
-        +datetime created_at
-    }
+
     class comments {
         +int comment_id
         +int user_id
@@ -139,7 +121,7 @@ classDiagram
     chat "1" -- "0..n" messages : "포함한다"
     messages "1" -- "0..n" bookmark : "저장한다"
     category "0..1" -- "0..n" bookmark : "카테고리화한다"
-    stocks "1" -- "0..n" financial_statements : "참조한다"
+
     stocks "1" -- "0..n" comments : "참조한다"
 ```
 ---
@@ -346,47 +328,7 @@ classDiagram
 
 ---
 
-### 1.7 financial_statements
-**Class Description**
-: 개별 주식(`stocks`)의 분기별/연간 재무제표 데이터를 저장합니다.
-
-### Attributes
--   **id** *(bigint, public)*
-    : 재무제표 데이터 PK.
--   **stock_code** *(string, public)*
-    : 대상 종목 코드 (stocks.code FK).
--   **report_period** *(date, public)*
-    : 보고서 기준일 (결산일).
--   **report_type** *(ReportTypeEnum, public)*
-    : 보고서 유형 (Annual/Quarterly).
--   **revenue** *(bigint, public)*
-    : 매출액.
--   **gross_profit** *(bigint, public)*
-    : 매출총이익.
--   **operating_income** *(bigint, public)*
-    : 영업이익.
--   **ebitda** *(bigint, public)*
-    : 이자, 세금, 감가상각비 차감 전 이익.
--   **net_income** *(bigint, public)*
-    : 당기순이익.
--   **total_assets** *(bigint, public)*
-    : 자산 총계.
--   **total_liabilities** *(bigint, public)*
-    : 부채 총계.
--   **total_equity** *(bigint, public)*
-    : 자본 총계.
--   **operating_cash_flow** *(bigint, public)*
-    : 영업 활동 현금 흐름.
--   **investing_cash_flow** *(bigint, public)*
-    : 투자 활동 현금 흐름.
--   **financing_cash_flow** *(bigint, public)*
-    : 재무 활동 현금 흐름.
--   **free_cash_flow** *(bigint, public)*
-    : 잉여 현금 흐름.
--   **created_at** *(datetime, public)*
-    : 데이터 생성 시각.
-
----
+(Removed financial_statements)
 
 ### 1.8 comments
 **Class Description**

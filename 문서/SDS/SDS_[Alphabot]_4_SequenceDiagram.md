@@ -281,27 +281,7 @@ sequenceDiagram
 
 사용자가 사이드바에서 휴지통 메뉴를 클릭한다 → 삭제된 대화 기록 및 저장된 답변 목록을 확인한다 → 원하는 항목을 선택하고 복원 또는 영구 삭제 버튼을 누른다 → 목록이 갱신된다.
 
-### 3.3 재무제표 조회
-```mermaid
-sequenceDiagram
-    actor User
-    participant StockSearchFragment as StockSearchFragment [종목 분석 영역]
-    participant StockViewModel
-    participant StockRepository
-    participant ExternalAPI as ExternalAPI [외부 금융 API]
-
-    Note over StockSearchFragment: '상세 정보' 탭에서 재무제표 탭으로 전환
-    User->>StockSearchFragment: 재무제표 탭 클릭
-    StockSearchFragment->>StockViewModel: loadFinancials(ticker)
-    StockViewModel->>StockRepository: fetchFinancials(ticker)
-    StockRepository->>ExternalAPI: 재무 데이터 요청
-    ExternalAPI-->>StockRepository: 데이터 응답 (재무제표 데이터)
-    StockRepository-->>StockViewModel: 데이터 반환
-    StockViewModel-->>StockSearchFragment: 재무제표 표시 완료 (update UI)
-    StockSearchFragment-->>User: 재무제표 표시 완료
-```
-
-사용자가 종목 분석 영역에서 재무제표 탭을 클릭한다 → 시스템은 해당 종목의 최신 재무제표 데이터를 조회한다 → 재무 상태표, 손익계산서 등의 데이터가 표와 그래프로 화면에 출력된다.
+(Removed Section 3.3)
 
 ### 3.4 채팅기록 조회
 
@@ -350,7 +330,7 @@ sequenceDiagram
 
 ## 4. 뉴스/공시 (News & Disclosure)
 
-### 4.1 뉴스/공시 요약 및 감성 분석
+### 4.1 뉴스/공시 요약
 
 ```mermaid
 sequenceDiagram
@@ -377,7 +357,7 @@ sequenceDiagram
         loop 3. 내부 처리 (정규화, 중복 제거)
             System->>System: 표준 스키마 정규화
             opt 3a. 정규화 실패/다국어
-                System->>System: [3a1] 원문 카드로 대체 (요약/감성 숨김)
+                System->>System: [3a1] 원문 카드로 대체 (요약 숨김)
             end
             System->>System: 중복/유사 문서 정리
         end
@@ -400,7 +380,7 @@ sequenceDiagram
     deactivate System
 ```
 
-사용자가 뉴스/공시 요약 및 감성 분석을 요청한다 → 시스템은 외부 소스에서 뉴스/공시를 수집한다 → 수집된 뉴스/공시를 표준 스키마로 정규화한다 → 정규화된 뉴스/공시를 중복/유사 문서를 정리한다 → 필터와 정렬 기준을 적용한다 → 카드 리스트를 표시한다.
+사용자가 뉴스/공시 요약 요청한다 → 시스템은 외부 소스에서 뉴스/공시를 수집한다 → 수집된 뉴스/공시를 표준 스키마로 정규화한다 → 정규화된 뉴스/공시를 중복/유사 문서를 정리한다 → 필터와 정렬 기준을 적용한다 → 카드 리스트를 표시한다.
 
 ### 4.2 출처 및 시점 확인
 
