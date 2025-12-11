@@ -14,6 +14,7 @@ classDiagram
         +int chat_id
         +int user_id
         +string title
+        +string stock_code
         +datetime created_at
         +datetime lastchat_at
         +TrashEnum trash_can
@@ -28,6 +29,7 @@ classDiagram
     }
     class category {
         +int category_id
+        +int user_id
         +string title
         +datetime created_at
     }
@@ -42,12 +44,54 @@ classDiagram
         +string code
         +string company_name
         +string sector
+        +string industry
+        +string country
+        +string website
+        +int full_time_employees
         +text business_summary
         +numeric current_price
+        +numeric previous_close
+        +numeric open
+        +numeric day_high
+        +numeric day_low
         +bigint market_cap
+        +bigint volume
+        +bigint average_volume_10d
         +numeric pe_ratio
+        +numeric forward_pe
+        +numeric pbr
+        +numeric psr
+        +numeric eps
+        +numeric forward_eps
+        +bigint enterprise_value
+        +numeric enterprise_to_revenue
+        +numeric enterprise_to_ebitda
+        +numeric profit_margins
+        +numeric operating_margins
+        +numeric gross_margins
+        +numeric roa
+        +numeric roe
+        +bigint total_debt
+        +bigint total_cash
+        +numeric debt_to_equity
+        +bigint free_cashflow
+        +numeric revenue_growth
+        +numeric earnings_growth
+        +numeric fifty_two_week_high
+        +numeric fifty_two_week_low
+        +numeric fifty_day_average
+        +numeric two_hundred_day_average
+        +numeric beta
+        +numeric dividend_rate
         +numeric dividend_yield
+        +numeric payout_ratio
+        +datetime ex_dividend_date
+        +numeric last_dividend_value
         +string recommendation
+        +numeric target_mean_price
+        +numeric target_high_price
+        +numeric target_low_price
+        +int number_of_analyst_opinions
         +datetime last_updated
     }
     class financial_statements {
@@ -56,20 +100,47 @@ classDiagram
         +date report_period
         +ReportTypeEnum report_type
         +bigint revenue
+        +bigint gross_profit
+        +bigint operating_income
+        +bigint ebitda
         +bigint net_income
         +bigint total_assets
         +bigint total_liabilities
+        +bigint total_equity
         +bigint operating_cash_flow
+        +bigint investing_cash_flow
+        +bigint financing_cash_flow
+        +bigint free_cash_flow
+        +datetime created_at
+    }
+    class comments {
+        +int comment_id
+        +int user_id
+        +string stock_code
+        +text content
+        +datetime created_at
+    }
+    class news_articles {
+        +int article_id
+        +string category
+        +text title
+        +text content
+        +text url
+        +string source
+        +string published_at_text
         +datetime created_at
     }
 
     users "1" -- "0..n" chat : "소유한다"
     users "1" -- "0..n" messages : "채팅입력한다"
     users "1" -- "0..n" bookmark : "소유한다"
+    users "1" -- "0..n" category : "생성한다"
+    users "1" -- "0..n" comments : "작성한다"
     chat "1" -- "0..n" messages : "포함한다"
     messages "1" -- "0..n" bookmark : "저장한다"
     category "0..1" -- "0..n" bookmark : "카테고리화한다"
     stocks "1" -- "0..n" financial_statements : "참조한다"
+    stocks "1" -- "0..n" comments : "참조한다"
 ```
 ---
 
@@ -174,18 +245,102 @@ classDiagram
     : 회사명.
 -   **sector** *(string, public)*
     : 섹터.
+-   **industry** *(string, public)*
+    : 산업군.
+-   **country** *(string, public)*
+    : 국가.
+-   **website** *(string, public)*
+    : 웹사이트.
+-   **full_time_employees** *(int, public)*
+    : 직원 수.
 -   **business_summary** *(text, public)*
     : 비즈니스 요약.
 -   **current_price** *(numeric, public)*
     : 현재 주가.
+-   **previous_close** *(numeric, public)*
+    : 전일 종가.
+-   **open** *(numeric, public)*
+    : 시가.
+-   **day_high** *(numeric, public)*
+    : 고가.
+-   **day_low** *(numeric, public)*
+    : 저가.
 -   **market_cap** *(bigint, public)*
     : 시가 총액.
+-   **volume** *(bigint, public)*
+    : 거래량.
+-   **average_volume_10d** *(bigint, public)*
+    : 10일 평균 거래량.
 -   **pe_ratio** *(numeric, public)*
     : 주가수익비율 (TTM).
+-   **forward_pe** *(numeric, public)*
+    : 선행 PER.
+-   **pbr** *(numeric, public)*
+    : 주가순자산비율.
+-   **psr** *(numeric, public)*
+    : 주가매출비율.
+-   **eps** *(numeric, public)*
+    : 주당순이익.
+-   **forward_eps** *(numeric, public)*
+    : 선행 EPS.
+-   **enterprise_value** *(bigint, public)*
+    : 기업 가치.
+-   **enterprise_to_revenue** *(numeric, public)*
+    : EV/Revenue.
+-   **enterprise_to_ebitda** *(numeric, public)*
+    : EV/EBITDA.
+-   **profit_margins** *(numeric, public)*
+    : 순이익률.
+-   **operating_margins** *(numeric, public)*
+    : 영업이익률.
+-   **gross_margins** *(numeric, public)*
+    : 매출총이익률.
+-   **roa** *(numeric, public)*
+    : 총자산이익률.
+-   **roe** *(numeric, public)*
+    : 자기자본이익률.
+-   **total_debt** *(bigint, public)*
+    : 총부채.
+-   **total_cash** *(bigint, public)*
+    : 총현금.
+-   **debt_to_equity** *(numeric, public)*
+    : 부채비율.
+-   **free_cashflow** *(bigint, public)*
+    : 잉여현금흐름.
+-   **revenue_growth** *(numeric, public)*
+    : 매출성장률.
+-   **earnings_growth** *(numeric, public)*
+    : 이익성장률.
+-   **fifty_two_week_high** *(numeric, public)*
+    : 52주 신고가.
+-   **fifty_two_week_low** *(numeric, public)*
+    : 52주 신저가.
+-   **fifty_day_average** *(numeric, public)*
+    : 50일 이동평균.
+-   **two_hundred_day_average** *(numeric, public)*
+    : 200일 이동평균.
+-   **beta** *(numeric, public)*
+    : 베타 (변동성 지표).
+-   **dividend_rate** *(numeric, public)*
+    : 배당금.
 -   **dividend_yield** *(numeric, public)*
     : 배당 수익률.
+-   **payout_ratio** *(numeric, public)*
+    : 배당성향.
+-   **ex_dividend_date** *(datetime, public)*
+    : 배당락일.
+-   **last_dividend_value** *(numeric, public)*
+    : 마지막 배당금.
 -   **recommendation** *(string, public)*
     : 애널리스트 투자의견.
+-   **target_mean_price** *(numeric, public)*
+    : 목표 주가 평균.
+-   **target_high_price** *(numeric, public)*
+    : 목표 주가 최고.
+-   **target_low_price** *(numeric, public)*
+    : 목표 주가 최저.
+-   **number_of_analyst_opinions** *(int, public)*
+    : 애널리스트 의견 수.
 -   **last_updated** *(datetime, public)*
     : 정보 마지막 갱신 시각.
 
@@ -206,16 +361,72 @@ classDiagram
     : 보고서 유형 (Annual/Quarterly).
 -   **revenue** *(bigint, public)*
     : 매출액.
+-   **gross_profit** *(bigint, public)*
+    : 매출총이익.
+-   **operating_income** *(bigint, public)*
+    : 영업이익.
+-   **ebitda** *(bigint, public)*
+    : 이자, 세금, 감가상각비 차감 전 이익.
 -   **net_income** *(bigint, public)*
     : 당기순이익.
 -   **total_assets** *(bigint, public)*
     : 자산 총계.
 -   **total_liabilities** *(bigint, public)*
     : 부채 총계.
+-   **total_equity** *(bigint, public)*
+    : 자본 총계.
 -   **operating_cash_flow** *(bigint, public)*
     : 영업 활동 현금 흐름.
+-   **investing_cash_flow** *(bigint, public)*
+    : 투자 활동 현금 흐름.
+-   **financing_cash_flow** *(bigint, public)*
+    : 재무 활동 현금 흐름.
+-   **free_cash_flow** *(bigint, public)*
+    : 잉여 현금 흐름.
 -   **created_at** *(datetime, public)*
     : 데이터 생성 시각.
+
+---
+
+### 1.8 comments
+**Class Description**
+: 종목 토론방 등에 작성된 사용자의 댓글을 저장합니다.
+
+### Attributes
+-   **comment_id** *(int, public)*
+    : 댓글 PK.
+-   **user_id** *(int, public)*
+    : 작성자 ID (users.user_id FK).
+-   **stock_code** *(string, public)*
+    : 관련 종목 코드 (stocks.code FK).
+-   **content** *(text, public)*
+    : 댓글 내용.
+-   **created_at** *(datetime, public)*
+    : 생성 시각.
+
+---
+
+### 1.9 news_articles
+**Class Description**
+: 크롤링 및 수집된 뉴스/공시 데이터를 저장합니다.
+
+### Attributes
+-   **article_id** *(int, public)*
+    : 뉴스 기사 PK.
+-   **category** *(string, public)*
+    : 뉴스 카테고리.
+-   **title** *(text, public)*
+    : 기사 제목.
+-   **content** *(text, public)*
+    : 기사 본문.
+-   **url** *(text, public)*
+    : 기사 원문 URL (Unique).
+-   **source** *(string, public)*
+    : 출처 (기본값: NAVER_FINANCE).
+-   **published_at_text** *(string, public)*
+    : 기사 발행 시각 (텍스트).
+-   **created_at** *(datetime, public)*
+    : 수집 시각.
 
 ---
 
@@ -536,13 +747,25 @@ classDiagram
 **Attributes**
 * **chat_id** *(int)*: 채팅방 고유 ID.
 * **title** *(str)*: 채팅방 제목.
+* **stock_code** *(Optional[str])*: 종목 코드 (종목 채팅방인 경우).
 * **created_at** *(datetime)*: 생성 시각.
 * **lastchat_at** *(Optional[datetime])*: 마지막 대화 시각.
 * **trash_can** *(str)*: 휴지통 상태.
 
 ---
 
-### 3.13 ChatList
+### 3.13 ChatByStockResponse
+**Class Description** : 종목 코드로 채팅방 조회/생성 시 반환되는 응답 스키마.
+
+**Attributes**
+* **chat_id** *(int)*: 채팅방 ID.
+* **title** *(str)*: 채팅방 제목.
+* **stock_code** *(str)*: 종목 코드.
+* **existed** *(bool)*: 기존 채팅방 존재 여부.
+
+---
+
+### 3.14 ChatList
 **Class Description** : 채팅방 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
@@ -554,7 +777,7 @@ classDiagram
 
 ---
 
-### 3.14 MessageCreate
+### 3.15 MessageCreate
 **Class Description** : 새 메시지 생성을 위한 요청 스키마 (POST /api/rooms/{room_id}/messages).
 
 **Attributes**
@@ -562,7 +785,7 @@ classDiagram
 
 ---
 
-### 3.15 MessageRead
+### 3.16 MessageRead
 **Class Description** : 메시지 조회를 위한 응답 스키마 (GET /api/rooms/{room_id}/messages).
 
 **Attributes**
@@ -571,11 +794,12 @@ classDiagram
 * **user_id** *(int)*: 작성한 사용자 ID.
 * **chat_id** *(int)*: 메시지가 속한 채팅방 ID.
 * **role** *(str)*: 메시지 주체 (user 또는 assistant).
+* **referenced_news** *(Optional[list[dict]])*: 참조된 뉴스 기사 목록.
 * **created_at** *(datetime)*: 생성 시각.
 
 ---
 
-### 3.16 MessageList
+### 3.17 MessageList
 **Class Description** : 메시지 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
@@ -587,7 +811,7 @@ classDiagram
 
 ---
 
-### 3.17 CategoryBase
+### 3.18 CategoryBase
 **Class Description** : 카테고리 공통 속성을 위한 기본 스키마입니다.
 
 **Attributes**
@@ -596,7 +820,7 @@ classDiagram
 
 ---
 
-### 3.18 CategoryCreate
+### 3.19 CategoryCreate
 **Class Description** : 카테고리 생성을 위한 요청 스키마입니다. (CategoryBase 상속)
 
 **Attributes**
@@ -604,7 +828,7 @@ classDiagram
 
 ---
 
-### 3.19 CategoryUpdate
+### 3.20 CategoryUpdate
 **Class Description** : 카테고리 수정을 위한 요청 스키마입니다.
 
 **Attributes**
@@ -613,7 +837,7 @@ classDiagram
 
 ---
 
-### 3.20 CategoryInDB
+### 3.21 CategoryInDB
 **Class Description** : 데이터베이스의 카테고리 스키마입니다. (CategoryBase 상속)
 
 **Attributes**
@@ -623,7 +847,7 @@ classDiagram
 
 ---
 
-### 3.21 Category
+### 3.22 Category
 **Class Description** : 클라이언트에 카테고리 정보를 반환하기 위한 응답 스키마입니다. (CategoryInDB 상속)
 
 **Attributes**
@@ -631,7 +855,7 @@ classDiagram
 
 ---
 
-### 3.22 CategoryList
+### 3.23 CategoryList
 **Class Description** : 카테고리 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
@@ -643,7 +867,7 @@ classDiagram
 
 ---
 
-### 3.23 BookmarkCreate
+### 3.24 BookmarkCreate
 **Class Description** : 북마크(메시지 저장) 생성을 위한 요청 스키마입니다.
 
 **Attributes**
@@ -652,7 +876,7 @@ classDiagram
 
 ---
 
-### 3.24 BookmarkRead
+### 3.25 BookmarkRead
 **Class Description** : 북마크 조회를 위한 응답 스키마입니다.
 
 **Attributes**
@@ -664,7 +888,7 @@ classDiagram
 
 ---
 
-### 3.25 BookmarkList
+### 3.26 BookmarkList
 **Class Description** : 북마크 목록 응답 스키마 (페이지네이션).
 
 **Attributes**
