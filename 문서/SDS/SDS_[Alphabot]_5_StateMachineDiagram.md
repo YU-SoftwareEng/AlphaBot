@@ -20,9 +20,7 @@ Logout --> Login : session_cleared
 state Main {
   [*] --> Chat
   Chat --> Stock : search
-  Chat --> Help
   Chat --> Categories
-  Chat --> Records
   Chat --> Trash
 
   Chat --> News
@@ -32,9 +30,7 @@ state Main {
     [*] --> ChatIdle
     ChatIdle --> ChatTyping : type
     ChatTyping --> ChatIdle : send
-    ChatIdle --> ShareDlg : share
     ChatIdle --> DeleteDlg : delete
-    ShareDlg --> ChatIdle : done
     DeleteDlg --> ChatIdle : done
   }
 
@@ -62,12 +58,6 @@ state Main {
     CatDelete --> CatList : confirm
     CatList --> BookmarkList : open
     BookmarkList --> Chat : focus_chat
-  }
-
-  state Records {
-    [*] --> RecList
-    RecList --> Stock : open_research
-    RecList --> RecList : delete
   }
 
   state Trash {
@@ -101,7 +91,7 @@ state Main {
 ## 5.1 어플리케이션 SMD(전면)
 
 ### 5.1.1 모델링 원칙
-- **화면=State 1:1 매핑**: `Chat`, `Stock`, `Categories`, `Records`, `Trash`, `News`, `Profile` 등은 **복합(Composite) 상태**로 정의하고, 각 내부에 하위 화면/탭을 **서브 상태**로 둔다.
+- **화면=State 1:1 매핑**: `Chat`, `Stock`, `Categories`, `Trash`, `News`, `Profile` 등은 **복합(Composite) 상태**로 정의하고, 각 내부에 하위 화면/탭을 **서브 상태**로 둔다.
 - **이벤트=전이(Transition)**: 사용자 액션(버튼/탭/검색/뒤로가기) 또는 시스템 이벤트(인증 성공/세션 파기)로 상태 전이가 발생한다.
 - **종료 규칙**: 편집/상세 등 **하위 상태가 정상 종료**되면 **직전 상위 상태**로 복귀한다(예: `PEditor → PList`, `DetailPanel.Summary → SearchInput`).
 
@@ -109,9 +99,9 @@ state Main {
 - **Init**: 초기 진입 영역. `Landing`에서 `Login`/`Register`로 분기.
 - **Login/Register**: 인증 플로우. 성공 시 `Main`으로, 실패 시 자기 상태 유지.
 - **Main(Composite)**: 앱의 주요 내비게이션 허브.
-  - **Chat**: `ChatIdle ↔ ChatTyping`, 공유/삭제 다이얼로그로의 단발성 분기 후 복귀.
-  - **Stock**: `SearchInput → (NoResult | DetailPanel)`; `DetailPanel`은 `Summary`, `Financials`(분기/연간 토글), `Comments`, `Watchlist`로 구성.
-  - **Categories/Records/Trash**: 목록 중심. 생성/수정/삭제/복원 등의 단순 전이.
+  - **Chat**: `ChatIdle ↔ ChatTyping`, 삭제 다이얼로그로의 단발성 분기 후 복귀.
+  - **Stock**: `SearchInput → (NoResult | DetailPanel)`; `DetailPanel`은 `Summary`, `Financials`(분기/연간 토글), `Comments`로 구성.
+  - **Categories/Trash**: 목록 중심. 생성/수정/삭제/복원 등의 단순 전이.
 
   - **News**: 피드 기반. 결과 없을 때 `EmptyNews`로 분기 후 재시도 시 피드 복귀.
   - **Profile**: 프로필/설정/통계/로그아웃의 허브.
