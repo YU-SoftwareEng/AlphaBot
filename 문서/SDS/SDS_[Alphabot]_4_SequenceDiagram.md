@@ -281,9 +281,7 @@ sequenceDiagram
 
 사용자가 사이드바에서 휴지통 메뉴를 클릭한다 → 삭제된 대화 기록 및 저장된 답변 목록을 확인한다 → 원하는 항목을 선택하고 복원 또는 영구 삭제 버튼을 누른다 → 목록이 갱신된다.
 
-(Removed Section 3.3)
-
-### 3.4 채팅기록 조회
+### 3.3 채팅기록 조회
 
 ```mermaid
 sequenceDiagram
@@ -330,7 +328,7 @@ sequenceDiagram
 
 ## 4. 뉴스/공시 (News & Disclosure)
 
-### 4.1 뉴스/공시 요약
+### 4.1 뉴스/공시 조회
 
 ```mermaid
 sequenceDiagram
@@ -354,20 +352,12 @@ sequenceDiagram
         ExternalSources-->>System: 2. 데이터 반환
         deactivate ExternalSources
 
-        loop 3. 내부 처리 (정규화, 중복 제거)
-            System->>System: 표준 스키마 정규화
-            opt 3a. 정규화 실패/다국어
-                System->>System: [3a1] 원문 카드로 대체 (요약 숨김)
-            end
-            System->>System: 중복/유사 문서 정리
-        end
+        System->>System: 3. 필터 및 정렬 적용
 
-        System->>System: 4. 필터 및 정렬 적용
-
-        alt 4a. 결과 0건
-            System-->>User: [4a1] "관련 소식이 없습니다" (필터 완화 제안)
-        else 5. Success (결과 1건 이상)
-            System-->>User: [5] 필터 적용된 카드 리스트 표시 (매체/시간/링크)
+        alt 3a. 결과 0건
+            System-->>User: [3a1] "관련 소식이 없습니다" (필터 완화 제안)
+        else 4. Success (결과 1건 이상)
+            System-->>User: [4] 필터 적용된 카드 리스트 표시 (매체/시간/링크)
         end
     end
     deactivate System
@@ -380,7 +370,7 @@ sequenceDiagram
     deactivate System
 ```
 
-사용자가 뉴스/공시 요약 요청한다 → 시스템은 외부 소스에서 뉴스/공시를 수집한다 → 수집된 뉴스/공시를 표준 스키마로 정규화한다 → 정규화된 뉴스/공시를 중복/유사 문서를 정리한다 → 필터와 정렬 기준을 적용한다 → 카드 리스트를 표시한다.
+사용자가 뉴스/공시 조회를 요청한다 → 시스템은 외부 소스에서 뉴스/공시를 수집한다 → 필터와 정렬 기준을 적용한다 → 카드 리스트를 표시한다.
 
 ### 4.2 출처 및 시점 확인
 
