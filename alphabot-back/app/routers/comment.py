@@ -11,7 +11,7 @@ from app.crud.crud_comment import comment_crud
 
 router = APIRouter()
 
-@router.post("/", response_model=CommentRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CommentRead, status_code=status.HTTP_201_CREATED)
 def create_comment(
     *,
     db: Session = Depends(get_db),
@@ -26,7 +26,7 @@ def create_comment(
     )
     return comment
 
-@router.get("/", response_model=CommentList)
+@router.get("", response_model=CommentList)
 def read_comments(
     *,
     db: Session = Depends(get_db),
