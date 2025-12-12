@@ -486,28 +486,7 @@ sequenceDiagram
 
 ## 6. 커뮤니티 (Community)
 
-### 6.1 종목 상세 정보 조회
-```mermaid
-sequenceDiagram
-    actor User
-    participant StockSearchFragment as StockSearchFragment [종목 분석 영역]
-    participant StockViewModel
-    participant StockRepository
-    participant ExternalAPI as ExternalAPI [외부 금융 API]
-
-    User->>StockSearchFragment: 검색창에 종목 입력 & 확정
-    StockSearchFragment->>StockViewModel: loadStockDetails(ticker)
-    StockViewModel->>StockRepository: fetchRealtime(ticker)
-    StockRepository->>ExternalAPI: 실시간 데이터 요청
-    ExternalAPI-->>StockRepository: 데이터 응답 (상세 시세)
-    StockRepository-->>StockViewModel: 데이터 반환
-    StockViewModel-->>StockSearchFragment: 상세 정보 표시 완료 (update UI)
-    StockSearchFragment-->>User: 상세 정보 표시 완료
-```
-
-사용자가 챗봇 대화창에서 종목 분석 영역을 활성화하거나 버튼을 누른다 → 분석 영역 내 검색창에서 종목명 또는 코드를 입력하고 선택한다 → 상세 정보 탭에 현재가, 등락률, 거래량 등 실시간 시세 정보가 표시된다.
-
-### 6.2 종목 토론 댓글 작성
+### 6.1 종목 토론 댓글 작성
 
 ```mermaid
 sequenceDiagram
@@ -532,7 +511,7 @@ sequenceDiagram
 
 사용자가 댓글을 작성하면 프론트엔드는 `POST /api/comments`를 호출한다.
 
-### 6.3 종목 토론 댓글 조회
+### 6.2 종목 토론 댓글 조회
 
 ```mermaid
 sequenceDiagram
